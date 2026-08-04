@@ -1,0 +1,1330 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>NBA Poker · 可玩原型 PLAYABLE_v0.7（标准叫分 + AI 协作升级）</title>
+<style>
+  :root{
+    --court:#3a2a1c; --court2:#5a3f28; --blue:#2f6df0; --blue2:#1b3a7a;
+    --gold:#ffce5c; --gold2:#ffae3b; --ink:#0d1320; --panel:rgba(14,22,40,.82);
+    --line:rgba(255,255,255,.12); --txt:#eaf0ff; --dim:#9fb0d0;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;background:
+    radial-gradient(120% 80% at 50% -10%, #15336b 0%, #0a1428 55%, #060b16 100%);
+    color:var(--txt);min-height:100vh;display:flex;flex-direction:column;align-items:center;
+    padding:env(safe-area-inset-top) 10px env(safe-area-inset-bottom);touch-action:manipulation}
+  .topbar{width:100%;max-width:880px;display:flex;justify-content:space-between;align-items:center;gap:8px;
+    padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel);margin-bottom:8px}
+  .topbar b{color:var(--gold);font-family:oswald,teko,sans-serif;letter-spacing:.5px;font-size:15px}
+  .pill{font-size:11px;color:var(--dim);text-align:right;flex:1}
+  .mini{background:linear-gradient(180deg,#2f6df0,#1b3a7a);border:none;color:#fff;padding:6px 12px;border-radius:8px;cursor:pointer;font-weight:700;flex:none}
+  .stage{width:100%;max-width:880px;flex:1;position:relative;border:1px solid var(--line);border-radius:14px;
+    background:linear-gradient(180deg, rgba(20,40,90,.5), rgba(10,18,34,.9)),
+      repeating-linear-gradient(90deg, rgba(255,255,255,.03) 0 2px, transparent 2px 60px);
+    overflow:hidden;padding:12px;min-height:520px;display:flex;flex-direction:column;gap:8px}
+  .seats{display:flex;justify-content:space-between;gap:8px}
+  .seat{flex:1;border:1px solid var(--line);border-radius:10px;padding:7px;background:rgba(10,16,30,.6);min-height:58px;position:relative}
+  .seat.active{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset,0 0 14px rgba(255,206,92,.25)}
+  .seat .nm{font-size:12px;font-weight:700;display:flex;align-items:center;gap:4px}
+  .seat .tag{font-size:10px;color:var(--ink);background:var(--gold);border-radius:6px;padding:1px 6px;font-weight:700}
+  .seat .cnt{position:absolute;right:6px;top:6px;font-family:oswald,teko,sans-serif;font-size:18px;color:var(--gold)}
+  .seat .bubble{margin-top:4px;font-size:11px;color:var(--dim);min-height:14px}
+  .seat .role{font-size:10px;color:var(--blue);font-weight:700}
+  .center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:120px}
+  .lastmove{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;min-height:46px;align-items:center}
+  .phase{font-size:12px;color:var(--dim);text-align:center}
+  .mult{font-family:oswald,teko,sans-serif;color:var(--gold);font-size:15px}
+  .timer{font-family:oswald,teko,sans-serif;font-size:22px;color:var(--gold2)}
+  .clock{font-family:oswald,teko,sans-serif;font-size:13px;color:var(--dim)}
+  .skill{font-size:12px;color:var(--gold);text-align:center;min-height:16px}
+  /* v0.7：手牌单行重叠展示（成熟斗地主习惯：一行铺开，左上角露点数） */
+  .hand{display:flex;justify-content:center;flex-wrap:nowrap;overflow-x:auto;padding:18px 8px 8px;border:1px solid var(--line);border-radius:10px;background:rgba(10,16,30,.6);min-height:96px;-webkit-overflow-scrolling:touch}
+  .card{width:clamp(38px,11vw,50px);height:clamp(54px,15.5vw,72px);border-radius:7px;background:#f7f8fc;border:1px solid #c9d2e6;position:relative;cursor:pointer;
+    transition:transform .12s;user-select:none;flex:none;box-shadow:-2px 0 5px rgba(0,0,0,.22)}
+  .hand .card{margin-left:-18px}
+  .hand .card:first-child{margin-left:0}
+  .card.sel{transform:translateY(-14px);box-shadow:0 0 0 2px var(--gold),0 6px 14px rgba(0,0,0,.5);z-index:2}
+  .card.phantom{border:2px solid var(--gold);background:linear-gradient(180deg,#fff6dc,#ffe6a8);box-shadow:0 0 10px rgba(255,206,92,.5)}
+  .card .r{position:absolute;top:3px;left:5px;font-size:24px;font-weight:800;line-height:1;color:#1a1d2e}
+  .card .s{position:absolute;top:28px;left:6px;font-size:20px;color:#2c314d}
+  .card .sc{position:absolute;bottom:4px;right:5px;font-size:26px;color:#2c314d}
+  .card.red .r,.card.red .s,.card.red .sc{color:#e23a4e}
+  /* Joker 牌：扑克牌小丑(jester)画像，靠颜色区分——大王红(#d4202a)、小王黑(#1c1c24) */
+  .card .jokerArt{position:absolute;top:3px;left:3px;width:calc(100% - 6px);height:calc(100% - 6px)}
+  /* 底牌暗牌（牌背）：叫完地主前不明示 */
+  .card.back{background:linear-gradient(145deg,#2f6df0 0%,#1b3a7a 100%);border-color:rgba(255,255,255,.35);cursor:default;
+    background-image:repeating-linear-gradient(45deg, rgba(255,255,255,.08) 0 4px, transparent 4px 8px),linear-gradient(145deg,#2f6df0 0%,#1b3a7a 100%)}
+  .card.back::after{content:"🏀";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:16px;opacity:.85}
+  .controls{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;padding:8px}
+  .btn{border:1px solid var(--line);background:rgba(255,255,255,.08);color:var(--txt);padding:10px 14px;border-radius:9px;cursor:pointer;font-weight:700;font-size:14px;line-height:1.25;min-height:44px;touch-action:manipulation}
+  .btn:disabled{opacity:.35;cursor:not-allowed}
+  .btn.primary{background:linear-gradient(180deg,var(--gold),var(--gold2));color:#1a1300;border:none}
+  .btn.go{background:linear-gradient(180deg,#2f6df0,#1b3a7a);color:#fff;border:none}
+  .btn.starPick{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:150px;padding:12px 8px;font-size:14px}
+  .btn.starPick b{font-family:oswald,teko,sans-serif;font-size:18px;color:var(--gold)}
+  .starPick .spName{font-size:15px}
+  .starPick .spSkill{font-size:14px;color:var(--gold2);font-weight:700}
+  .starPick .spType{font-size:11px;opacity:.75}
+  .card.dim{filter:grayscale(.6)}
+  .skillTip{display:none;position:fixed;z-index:999;max-width:280px;background:#10182b;color:#eef2fb;padding:10px 12px;border-radius:10px;font-size:12px;line-height:1.55;box-shadow:0 8px 24px rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.12);pointer-events:none}
+  .skillTip .tipType{margin:4px 0 2px;color:var(--gold);font-weight:700}
+  .skillTip .tipDesc{opacity:.92}
+  .log{width:100%;max-width:880px;height:90px;overflow:auto;border:1px solid var(--line);border-radius:10px;background:rgba(8,12,24,.7);
+    padding:8px;font-size:12px;color:var(--dim);margin-top:8px;line-height:1.5}
+  .log .me{color:var(--gold)}
+  .overlay{position:absolute;inset:0;background:rgba(4,8,16,.9);display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:20;padding:20px;text-align:center}
+  .overlay.on{display:flex}
+  .overlay h2{font-family:oswald,teko,sans-serif;font-size:34px;color:var(--gold)}
+  .overlay .hl{font-size:13px;color:var(--gold);margin-top:6px}
+  .pill2{font-size:12px;color:var(--dim);max-width:80%}
+
+  /* ===== 移动端适配（≤520px 手机竖屏）===== */
+  @media (max-width:520px){
+    body{padding:env(safe-area-inset-top) 6px env(safe-area-inset-bottom)}
+    .stage{min-height:auto;padding:10px;gap:7px}
+    .topbar{padding:6px 8px;margin-bottom:6px}
+    .pill{display:none}
+    .seats{gap:5px}
+    .seat{min-height:50px;padding:5px}
+    .seat .nm{font-size:11px}
+    .seat .cnt{font-size:15px}
+    .center{min-height:96px;gap:4px}
+    .card{width:clamp(34px,12.4vw,50px);height:clamp(48px,17vw,72px)}
+    .hand{justify-content:flex-start;padding:16px 4px 10px}
+    .hand .card{margin-left:-14px}
+    .hand .card:first-child{margin-left:0}
+    .controls{flex-direction:row;flex-wrap:wrap;gap:6px;padding:6px}
+    .btn{flex:1 1 calc(50% - 6px);min-width:0;padding:13px 8px;font-size:14px}
+    .btn.starPick{flex:1 1 44%;min-width:0;padding:10px 4px}
+    .log{height:74px}
+  }
+  /* ===== 超窄屏（≤360px）进一步收紧 ===== */
+  @media (max-width:360px){
+    .seat .bubble{display:none}
+  }
+  /* ===== Phase 6 计时遥测面板（dev） ===== */
+  .tele{position:fixed;right:8px;top:54px;width:min(320px,92vw);max-height:78vh;overflow:auto;
+    border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:12px;z-index:30;display:none;font-size:12px}
+  .tele.on{display:block}
+  .tele h3{font-size:13px;color:var(--gold);margin-bottom:6px}
+  .tele .row{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dashed var(--line)}
+  .tele .row b{color:var(--txt)}
+  .tele .acts{display:flex;gap:6px;margin-top:8px}
+  .tele .acts button{flex:1;font-size:12px;padding:8px}
+  .bottom{display:flex;gap:3px;justify-content:center;margin:4px 0;min-height:46px;align-items:center}
+  .bottom .lbl{font-size:11px;color:var(--dim);margin-right:4px}
+  .bottom .card{width:30px;height:42px;font-size:12px;margin-left:0!important}
+  .bottom .card .r{font-size:20px;top:2px;left:3px}
+  .bottom .card .s{font-size:17px;top:21px;left:4px}
+  .bottom .card .sc{font-size:19px;bottom:2px;right:3px}
+  .bottom .card .jokerArt{top:1px;left:1px;width:calc(100% - 2px);height:calc(100% - 2px)}
+  .bottom .card.back::after{font-size:12px}
+  .ovStats{display:none;width:100%;max-width:340px;margin:6px auto 0;font-size:13px;text-align:left;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:10px 12px}
+  .ovStats h4{margin:0 0 6px;font-size:13px;color:var(--gold)}
+  .ovStats .srow{display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px dashed rgba(255,255,255,.1)}
+  .ovStats .srow:last-child{border-bottom:none}
+  .ovStats .srow b{color:var(--gold);font-weight:700}
+  .ovStats .srow .win{color:#5be38a}
+  .ovStats .srow .lose{color:#ff8a8a}
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div><b>NBA POKER</b> · 可玩原型 <b>v0.7</b> <span class="pill">｜标准叫分制 ｜ 农民 2打1 协作 ｜ AI 升级 ｜ 计时遥测</span></div>
+    <button class="mini" id="minBtn">▽ 最小化</button>
+    <button class="mini" id="teleBtn">📊 数据</button>
+  </div>
+
+  <div class="stage" id="stage">
+    <div class="seats">
+      <div class="seat" id="seat1"><div class="nm">🤖 AI 对手 ① <span class="tag" id="tag1" style="display:none">地主</span></div><div class="role" id="role1"></div><div class="cnt" id="cnt1">17</div><div class="bubble" id="bub1"></div></div>
+      <div class="seat" id="seat2"><div class="nm">🤖 AI 对手 ② <span class="tag" id="tag2" style="display:none">地主</span></div><div class="role" id="role2"></div><div class="cnt" id="cnt2">17</div><div class="bubble" id="bub2"></div></div>
+    </div>
+
+    <div class="center">
+      <div class="phase" id="phaseTxt">准备发牌…</div>
+      <div class="lastmove" id="lastMove"></div>
+      <div class="bottom" id="bottomCards"></div>
+      <div class="mult" id="multTxt">倍数 ×1</div>
+      <div class="timer" id="timerTxt"></div>
+      <div class="clock" id="clockTxt">本局 0:00</div>
+      <div class="skill" id="skillTxt"></div>
+    </div>
+
+    <div class="seat" id="seat0" style="min-height:54px">
+      <div class="nm">🧑 你（？） <span class="tag" id="tag0" style="display:none">地主</span></div>
+      <div class="role" id="role0"></div>
+      <div class="cnt" id="cnt0">17</div>
+      <div class="bubble" id="bub0"></div>
+    </div>
+
+    <div class="hand" id="hand"></div>
+    <div class="controls" id="controls"></div>
+
+    <div class="overlay" id="overlay">
+      <h2 id="ovTitle">最小化</h2>
+      <div class="hl" id="ovHl" style="display:none"></div>
+      <div class="pill2" id="ovSub">已回到比赛画面 · 点此回到游戏</div>
+      <div class="ovStats" id="ovStats"></div>
+    </div>
+  </div>
+
+  <div class="log" id="log"></div>
+
+  <div class="tele" id="tele">
+    <h3>📊 计时遥测（Phase 6 · dev）</h3>
+    <div class="row"><span>已记录局数</span><b id="tN">0</b></div>
+    <div class="row"><span>真实时长 均值</span><b id="tAvg">–</b></div>
+    <div class="row"><span>真实时长 中位</span><b id="tMed">–</b></div>
+    <div class="row"><span>真实时长 最长</span><b id="tMax">–</b></div>
+    <div class="row"><span>平均人类回合</span><b id="tHuman">–</b></div>
+    <div class="row"><span>平均 AI 回合</span><b id="tAi">–</b></div>
+    <textarea id="tJson" readonly spellcheck="false" style="width:100%;height:120px;margin:8px 0;font:11px/1.4 monospace;background:#0c1020;color:#bfe; border:1px solid #2a3354; border-radius:6px; padding:6px; resize:vertical"></textarea>
+    <div class="acts">
+      <button class="btn go" id="tCopy">复制 JSON</button>
+      <button class="btn" id="tExport">导出文件</button>
+      <button class="btn" id="tClear">清除</button>
+    </div>
+  </div>
+
+<script>
+/* ============ 牌模型 ============ */
+const SUITS=["♠","♥","♣","♦"];
+const RED={"♥":1,"♦":1};
+const LABEL={3:"3",4:"4",5:"5",6:"6",7:"7",8:"8",9:"9",10:"10",11:"J",12:"Q",13:"K",14:"A",15:"2",16:"小王",17:"大王"};
+let CARD_SEQ=0;
+function buildDeck(){
+  const d=[];
+  for(let v=3;v<=15;v++) for(const s of SUITS) d.push({id:++CARD_SEQ,v,s,red:!!RED[s],label:LABEL[v]});
+  d.push({id:++CARD_SEQ,v:16,s:"",red:false,label:"小王"});
+  d.push({id:++CARD_SEQ,v:17,s:"",red:true,label:"大王"});
+  return d;
+}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+// 手牌排序（成熟斗地主习惯）：大王>小王>2>A>K>…>3，同点花色分组
+const SUIT_ORDER={"♠":3,"♥":2,"♣":1,"♦":0};
+function sortHand(h){ h.sort((a,b)=> b.v-a.v || ((SUIT_ORDER[b.s]??-1)-(SUIT_ORDER[a.s]??-1))); }
+function anyBomb(hand){ const g=groupByVal(hand); return (g[16]&&g[17]) || Object.values(g).some(a=>a.length===4); }
+// 发牌 + N4 极端坏牌兜底重发 + 保底炸弹回调
+function dealHands(){
+  const wantBomb=Math.random()<GUARANTEE_BOMB_PROB;
+  let best=null,bestStr=-Infinity,attempts=0;
+  while(attempts<60){
+    attempts++;
+    const deck=shuffle(buildDeck());
+    const p0=deck.slice(0,17),p1=deck.slice(17,34),p2=deck.slice(34,51),bottom=deck.slice(51,54);
+    const str=handStrength(p0);
+    // 保底炸弹（DEC-013）：只保证【人类手牌 p0】含炸弹，直接回应"玩家抽到炸弹概率小"。
+    // p=0.22 时人类起手炸弹率 ≈ 0.22 + 0.78×自然率20% ≈ 37%，落在 35%-40% 目标区间；
+    // naive 基线已改为无技能叫分（DEC-012），留出足够 M-07 余量吸收此回调。
+    const hasBomb=anyBomb(p0);
+    if((!wantBomb||hasBomb) && str>bestStr){ bestStr=str; best={p0,p1,p2,bottom,hasBomb}; }
+    if(best && str>=BAD_HAND_FLOOR && (!wantBomb||best.hasBomb)) break;
+  }
+  if(!best){ const deck=shuffle(buildDeck()); best={p0:deck.slice(0,17),p1:deck.slice(17,34),p2:deck.slice(34,51),bottom:deck.slice(51,54),hasBomb:false}; }
+  return best;
+}
+
+/* ============ 球星卡 / 技能元数据 ============ */
+/* 15 人技能池（v0.7 忠实实现，详见 02_mecha_gameplay/PLAYER_SKILLS_v0.2.md 四-G）
+ * type: active(主动) / passive(被动/反应) ；cd: 冷却  */
+const STARS={
+  jokic:{key:"jokic",name:"约基奇",skill:"移花接木",type:"active",cd:"1局1次",desc:"出牌阶段与任意一名其他玩家互换一张手牌（对手排序打乱呈现）"},
+  wembanyama:{key:"wembanyama",name:"文班亚马",skill:"遮天蔽日",type:"reactive",cd:"1局1次",desc:"对手打出炸弹时抵消其效果（王炸不可抵消）"},
+  alexander:{key:"alexander",name:"亚历山大",skill:"造犯规",type:"passive+active",cd:"被动常驻；主动每对手1次",desc:"被压牌→压人者+1犯规；犯规达4可抽取其1张手牌（打乱，可选留/弃）"},
+  brunson:{key:"brunson",name:"布伦森",skill:"大心脏",type:"passive",cd:"常驻",desc:"手牌≤5张时点数默认+1级（K→A、A→2、2→王级）"},
+  durant:{key:"durant",name:"杜兰特",skill:"死神降临",type:"active",cd:"1局1次",desc:"打出含手中最大牌的牌型被压时，可弃一张大于10的牌（J/Q/K/A/2）重夺出牌权"},
+  harden:{key:"harden",name:"哈登",skill:"and one",type:"active",cd:"1局1次",desc:"出牌后可随即再打出一次相同牌型"},
+  doncic:{key:"doncic",name:"东契奇",skill:"luka magic",type:"passive",cd:"1局1次触发",desc:"打出3种以上牌型后复制一张手中最大牌（不含王）"},
+  kobe:{key:"kobe",name:"科比",skill:"曼巴时刻",type:"passive",cd:"常驻",desc:"恰好剩最后一个牌型时视为最大点数直接获胜"},
+  duncan:{key:"duncan",name:"邓肯",skill:"石佛",type:"passive",cd:"免疫1次",desc:"免疫任何针对自己的技能攻击（夺牌/强制弃牌）"},
+  oNeal:{key:"oNeal",name:"奥尼尔",skill:"制霸篮下",type:"active",cd:"1局1次",desc:"非王炸炸弹可升为最高级（等同王炸，不可被压）"},
+  kidd:{key:"kidd",name:"基德",skill:"球场视野",type:"passive",cd:"常驻",desc:"叫分前看底牌；若地主可在加倍后分配3张底牌"},
+  nowitzki:{key:"nowitzki",name:"诺维斯基",skill:"金鸡独立",type:"passive",cd:"常驻(每累计2对触发)",desc:"本局累计打出两个对子后弃一张手牌加速清牌"},
+  curry:{key:"curry",name:"库里",skill:"百步穿杨",type:"active",cd:"1局2次",desc:"对子当作三张打出（重组三连）"},
+  lebron:{key:"lebron",name:"詹姆斯",skill:"加冕",type:"active",cd:"1局1次",desc:"截下一张无人能压的单牌并领出"},
+  jordan:{key:"jordan",name:"乔丹",skill:"神之一手",type:"active",cd:"每局指定1张",desc:"开局指定1张万能牌（可变2–A任意牌，不可当王）"}
+};
+
+/* ============ NUMBRA 数值配置（Phase 4 回填，N1-N5） ============ */
+const NUMBRA={
+  N1:{ reorgMaxCards:3, cooldown:"一局一次", note:"重组≤3张真实牌+1幻影，构成三张/三带一/三带二" },
+  N2:{ targets:1, cooldown:"一局一次", note:"仅可强制 1 名农民" },
+  N3:{ immune:["bomb","rocket"], stack:false, charges:1, note:"全局仅 1 次，仅免疫炸弹/王炸，不可叠加" },
+  N4:{ badHandFloor:5, maxRedraw:3, note:"M-02c 硬需求：起手强度<5 触发兜底，最多重发 3 次取最优" },
+  N5:{ turnSeconds:25, range:[15,40], note:"S4 每回合 25s（DEC-011 放宽：正常斗地主人均出牌节奏，软锚点非硬红线）" }
+};
+const BAD_HAND_FLOOR=NUMBRA.N4.badHandFloor;
+const MAX_REDRAW=NUMBRA.N4.maxRedraw;
+const HUMAN_TURN=NUMBRA.N5.turnSeconds;   // 真人均出牌节奏（正常斗地主）
+const SOFT_CAP=480;                       // ~480s 软上限（DEC-011，仅提示不截断）
+const BID_SECONDS=15;                     // 叫/抢/加倍 每回合倒计时（秒）
+const GUARANTEE_BOMB_PROB=0.22;           // 保底炸弹（p0-only）：人类起手炸弹率 ≈ 0.22+0.78×20% ≈ 37%（目标区间 35%-40%）
+
+/* ============ Phase 4 验证过的平衡参数（固化进引擎） ============ */
+const BAL={ LEAD_SUBOPT:0.18, PASS_GIVE:0.05, BOMB_THR:3, COOP:true };  // v0.7.1：顺手出牌(农民自主压队友甩牌)后回调——AI 略强以保 M-07≥40%（原 0.20/0.06）
+
+/* ============ 手牌强度评估（N4 兜底依据） ============ */
+function handStrength(hand){
+  const g=groupByVal(hand); let s=0;
+  if(g[17])s+=6;
+  if(g[16])s+=3;
+  if(g[15])s+=g[15].length*2.2;
+  Object.values(g).forEach(a=>{ if(a.length===4) s+=5; });
+  [14,13,12,11].forEach(v=>{ if(g[v]) s+=g[v].length*(v-10)*0.4; });
+  const vals=Object.keys(g).map(Number).sort((a,b)=>a-b);
+  let run=1,maxrun=1; for(let i=1;i<vals.length;i++){ if(vals[i]===vals[i-1]+1){run++;maxrun=Math.max(maxrun,run);}else run=1; }
+  if(maxrun>=5) s+=(maxrun-4)*1.2;
+  return s;
+}
+function countBombs(hand){
+  const g=groupByVal(hand); let n=0;
+  if(g[16]&&g[17]) n++;
+  Object.values(g).forEach(a=>{ if(a.length===4) n++; });
+  return n;
+}
+
+/* ============ 牌型解析 ============ */
+function isConsec(arr){for(let i=1;i<arr.length;i++) if(arr[i]!==arr[i-1]+1) return false; return true;}
+function findConsecRun(sorted,m){
+  for(let i=0;i+m-1<sorted.length;i++){
+    let ok=true; for(let j=0;j<m;j++) if(sorted[i+j]!==sorted[i]+j){ok=false;break;}
+    if(ok) return sorted.slice(i,i+m);
+  }
+  return null;
+}
+function parseMove(cards){
+  if(!cards||cards.length===0) return null;
+  const vals=cards.map(c=>c.v).sort((a,b)=>a-b);
+  const n=vals.length;
+  const counts={}; vals.forEach(v=>counts[v]=(counts[v]||0)+1);
+  const ranks=Object.keys(counts).map(Number).sort((a,b)=>a-b);
+  if(n===2 && counts[16] && counts[17]) return {type:"rocket",rank:100,len:1,cards};
+  if(n===4 && ranks.length===1) return {type:"bomb",rank:ranks[0],len:1,cards};
+  if(n===1) return {type:"single",rank:vals[0],len:1,cards};
+  if(n===2 && ranks.length===1) return {type:"pair",rank:ranks[0],len:1,cards};
+  if(n===3 && ranks.length===1) return {type:"triple",rank:ranks[0],len:1,cards};
+  if(n===4){const t=ranks.find(r=>counts[r]===3); if(t!==undefined) return {type:"triple1",rank:t,len:1,cards}; return null;}
+  if(n===5){const t=ranks.find(r=>counts[r]===3),p=ranks.find(r=>counts[r]===2);
+    if(t!==undefined&&p!==undefined&&t!==p) return {type:"triple2",rank:t,len:1,cards};}
+  if(n>=5 && ranks.length===n && isConsec(ranks) && ranks[ranks.length-1]<=14)
+    return {type:"straight",rank:ranks[ranks.length-1],len:n,cards};
+  if(n>=6 && n%2===0 && ranks.length===n/2 && ranks.every(r=>counts[r]===2) && isConsec(ranks) && ranks[ranks.length-1]<=14)
+    return {type:"double",rank:ranks[ranks.length-1],len:n/2,cards};
+  const tripleRanks=ranks.filter(r=>counts[r]>=3 && r<=14).sort((a,b)=>a-b);
+  if(n%3===0){const m=n/3; if(tripleRanks.length===m && isConsec(tripleRanks) && ranks.every(r=>counts[r]===3))
+    return {type:"airplane",rank:tripleRanks[m-1],len:m,cards};}
+  if(n%4===0){const m=n/4; const run=findConsecRun(tripleRanks,m);
+    if(run){const used={};run.forEach(r=>used[r]=3);let rem=0;vals.forEach(v=>{if(used[v]>0)used[v]--;else rem++;});
+      if(rem===m) return {type:"airplane1",rank:run[m-1],len:m,cards};}}
+  if(n%5===0){const m=n/5; const run=findConsecRun(tripleRanks,m);
+    if(run){const used={};run.forEach(r=>used[r]=3);const rv=[];vals.forEach(v=>{if(used[v]>0)used[v]--;else rv.push(v);});
+      if(rv.length===2*m){const rc={};rv.forEach(v=>rc[v]=(rc[v]||0)+1);if(Object.values(rc).every(c=>c===2))return {type:"airplane2",rank:run[m-1],len:m,cards};}}}
+  return null;
+}
+function beats(prev,mv){
+  if(!prev) return true;
+  if(mv.type==="rocket") return true;
+  if(mv.type==="bomb"){ if(prev.type==="rocket")return false; if(prev.type==="bomb")return mv.rank>prev.rank; return true; }
+  if(prev.type==="bomb"||prev.type==="rocket") return false;
+  return mv.type===prev.type && mv.len===prev.len && mv.rank>prev.rank;
+}
+
+/* ============ 走子生成 ============ */
+function groupByVal(hand){const g={};hand.forEach(c=>(g[c.v]=g[c.v]||[]).push(c));return g;}
+function genAllMoves(hand){
+  const moves=[];const g=groupByVal(hand);const vals=Object.keys(g).map(Number).sort((a,b)=>a-b);
+  vals.forEach(v=>moves.push({type:"single",rank:v,len:1,cards:[g[v][0]]}));
+  vals.forEach(v=>{if(g[v].length>=2)moves.push({type:"pair",rank:v,len:1,cards:g[v].slice(0,2)});});
+  vals.forEach(v=>{if(g[v].length>=3){
+    moves.push({type:"triple",rank:v,len:1,cards:g[v].slice(0,3)});
+    const other=vals.find(o=>o!==v&&g[o].length>=1); if(other!==undefined)
+      moves.push({type:"triple1",rank:v,len:1,cards:g[v].slice(0,3).concat(g[other][0])});
+    const op=vals.find(o=>o!==v&&g[o].length>=2); if(op!==undefined)
+      moves.push({type:"triple2",rank:v,len:1,cards:g[v].slice(0,3).concat(g[op].slice(0,2))});
+  }});
+  vals.forEach(v=>{if(g[v].length===4)moves.push({type:"bomb",rank:v,len:1,cards:g[v].slice(0,4)});});
+  if(g[16]&&g[17]) moves.push({type:"rocket",rank:100,len:1,cards:[g[16][0],g[17][0]]});
+  for(let len=5;len<=12;len++) for(let s=3;s+len-1<=14;s++){
+    let ok=true;const cs=[];for(let k=0;k<len;k++){if(!g[s+k]){ok=false;break;}cs.push(g[s+k][0]);}
+    if(ok) moves.push({type:"straight",rank:s+len-1,len,cards:cs});
+  }
+  for(let len=3;len<=10;len++) for(let s=3;s+len-1<=14;s++){
+    let ok=true;const cs=[];for(let k=0;k<len;k++){if(!g[s+k]||g[s+k].length<2){ok=false;break;}cs.push(g[s+k][0],g[s+k][1]);}
+    if(ok) moves.push({type:"double",rank:s+len-1,len,cards:cs});
+  }
+  return moves;
+}
+function genBeating(hand,prev){
+  if(prev.type==="rocket") return [];
+  const out=[];const g=groupByVal(hand);const vals=Object.keys(g).map(Number).sort((a,b)=>a-b);
+  if(prev.type==="single"){vals.forEach(v=>{if(v>prev.rank)out.push({type:"single",rank:v,len:1,cards:[g[v][0]]});});}
+  else if(prev.type==="pair"){vals.forEach(v=>{if(v>prev.rank&&g[v].length>=2)out.push({type:"pair",rank:v,len:1,cards:g[v].slice(0,2)});});}
+  else if(prev.type==="triple"){vals.forEach(v=>{if(v>prev.rank&&g[v].length>=3)out.push({type:"triple",rank:v,len:1,cards:g[v].slice(0,3)});});}
+  else if(prev.type==="triple1"){vals.forEach(v=>{if(v>prev.rank&&g[v].length>=3){const o=vals.find(x=>x!==v&&g[x].length>=1);if(o!==undefined)out.push({type:"triple1",rank:v,len:1,cards:g[v].slice(0,3).concat(g[o][0])});}});}
+  else if(prev.type==="triple2"){vals.forEach(v=>{if(v>prev.rank&&g[v].length>=3){const o=vals.find(x=>x!==v&&g[x].length>=2);if(o!==undefined)out.push({type:"triple2",rank:v,len:1,cards:g[v].slice(0,3).concat(g[o].slice(0,2))});}});}
+  else if(prev.type==="straight"){for(let s=3;s+prev.len-1<=14;s++){if(s+prev.len-1<=prev.rank)continue;let ok=true;const cs=[];for(let k=0;k<prev.len;k++){if(!g[s+k]){ok=false;break;}cs.push(g[s+k][0]);}if(ok)out.push({type:"straight",rank:s+prev.len-1,len:prev.len,cards:cs});}}
+  else if(prev.type==="double"){for(let s=3;s+prev.len-1<=14;s++){if(s+prev.len-1<=prev.rank)continue;let ok=true;const cs=[];for(let k=0;k<prev.len;k++){if(!g[s+k]||g[s+k].length<2){ok=false;break;}cs.push(g[s+k][0],g[s+k][1]);}if(ok)out.push({type:"double",rank:s+prev.len-1,len:prev.len,cards:cs});}}
+  else if(prev.type==="airplane"||prev.type==="airplane1"||prev.type==="airplane2"){/* AI 简化：略过飞机跟牌 */}
+  vals.forEach(v=>{if(g[v].length===4)out.push({type:"bomb",rank:v,len:1,cards:g[v].slice(0,4)});});
+  if(g[16]&&g[17]) out.push({type:"rocket",rank:100,len:1,cards:[g[16][0],g[17][0]]});
+  return out;
+}
+
+/* ============ AI 策略 v0.7（记牌 + 手数评估 + 农民 2打1 协作） ============
+ * bug ⑧ 升级：SEEN 记牌器 / minTricks 贪心拆手 / 残局压制 / 炸弹时机
+ * bug ④ 修复：任何农民 AI 都与"另一个农民"协作（队友是真人或 AI 均生效），
+ *            农民永不内讧；Phase 4 削弱旋钮只作用于"与真人为敌"的座位。 */
+
+/* ---- 记牌器：全场已打出的牌（v → 已出张数） ---- */
+const SEEN={};
+function seenReset(){ for(const k in SEEN) delete SEEN[k]; }
+function seenAdd(cards){ cards.forEach(c=>{ SEEN[c.v]=(SEEN[c.v]||0)+1; }); }
+function isTopRemaining(v,myHand){   // 除我手牌与已打出的牌，场上是否已无更大的单张
+  for(let x=v+1;x<=17;x++){
+    const total=(x>=16)?1:4;
+    const mine=myHand.reduce((n,c)=>n+(c.v===x?1:0),0);
+    if(total-(SEEN[x]||0)-mine>0) return false;
+  }
+  return true;
+}
+/* ---- 贪心拆手数：火箭/炸弹→顺子→连对→三带→对/单 ---- */
+function minTricks(hand){
+  const cnt={}; hand.forEach(c=>{ cnt[c.v]=(cnt[c.v]||0)+1; });
+  let tricks=0;
+  if(cnt[16]&&cnt[17]){ tricks++; delete cnt[16]; delete cnt[17]; }
+  else { if(cnt[16]){tricks++;delete cnt[16];} if(cnt[17]){tricks++;delete cnt[17];} }
+  for(const v of Object.keys(cnt)) if(cnt[v]===4){ tricks++; delete cnt[v]; }
+  let found=true;
+  while(found){ found=false;                       // 顺子 ≥5
+    for(let s=3;s<=10;s++){ let len=0; while(s+len<=14&&cnt[s+len]>0) len++;
+      if(len>=5){ for(let k=0;k<len;k++){ cnt[s+k]--; if(!cnt[s+k]) delete cnt[s+k]; } tricks++; found=true; break; } } }
+  found=true;
+  while(found){ found=false;                       // 连对 ≥3
+    for(let s=3;s<=12;s++){ let len=0; while(s+len<=14&&cnt[s+len]>=2) len++;
+      if(len>=3){ for(let k=0;k<len;k++){ cnt[s+k]-=2; if(!cnt[s+k]) delete cnt[s+k]; } tricks++; found=true; break; } } }
+  let triples=0,pairs=0,singles=0;
+  for(const v of Object.keys(cnt)){
+    let n=cnt[v];
+    if(n>=3){ triples++; n-=3; }
+    if(n===2) pairs++; else if(n===1) singles++;
+  }
+  let t=triples;
+  while(t>0&&(pairs>0||singles>0)){ if(singles>0) singles--; else pairs--; t--; tricks++; }  // 三带吸收散牌
+  return tricks+t+pairs+singles;
+}
+/* ---- 候选择优：打出后剩余手数最少（平手取更小牌点） ---- */
+function pickByTricks(hand,cands){
+  if(!cands.length) return null;
+  let best=null,bestT=1e9;
+  const lim=Math.min(cands.length,24);
+  for(let i=0;i<lim;i++){
+    const m=cands[i];
+    const ids=new Set(m.cards.map(c=>c.id));
+    const t=minTricks(hand.filter(c=>!ids.has(c.id)));
+    if(t<bestT||(t===bestT&&best&&m.rank<best.rank)){ bestT=t; best=m; }
+  }
+  return best||cands[0];
+}
+
+// 真人（seat 0）为实控玩家，永远走强策略；平衡削弱只在 AI 座（1/2）生效
+function aiChoose(seat,prev){
+  if(seat===0) return aiStrong(seat,prev);
+  const landlord=G.landlord;
+  const seatFarmer=(seat!==landlord);
+  const partner=seatFarmer?[0,1,2].find(s=>s!==seat&&s!==landlord):-1;  // 另一个农民（真人或 AI）
+  const coop=BAL.COOP && seatFarmer;
+  // 与真人为敌才吃削弱：真人是地主 → 两个 AI 农民都是对手；真人是农民 → AI 地主是对手
+  const vsHuman=(landlord===0)?seatFarmer:(seat===landlord);
+  const hand=G.players[seat].hand;
+  const oppSeats=seatFarmer?[landlord]:[0,1,2].filter(s=>s!==seat);
+  const minOpp=Math.min(...oppSeats.map(s=>G.players[s].hand.length));
+
+  if(!prev){ /* ---- 领出 ---- */
+    const all=genAllForSeat(seat);
+    const nonBomb=all.filter(m=>m.type!=="bomb"&&m.type!=="rocket");
+    if(!nonBomb.length) return all.sort((a,b)=>a.rank-b.rank)[0];
+    // 协作①：队友只剩 1/2 张 → 喂对应牌型的最小牌送队友走
+    if(coop && partner>=0 && G.players[partner].hand.length<=2){
+      const need=G.players[partner].hand.length;
+      const feed=nonBomb.filter(m=>(need===2&&m.type==="pair")||m.type==="single").sort((a,b)=>a.rank-b.rank)[0];
+      if(feed) return feed;
+    }
+    // 协作②：真人队友且真人牌少 → 甩最小单牌让节奏（保留 v0.6 体验）
+    if(coop && partner===0 && G.players[0].hand.length<=hand.length){
+      const singles=nonBomb.filter(m=>m.type==="single").sort((a,b)=>a.rank-b.rank);
+      if(singles.length) return singles[0];
+    }
+    // 残局压制：对手 ≤2 张 → 不送小单张（改出对/三/高张）
+    if(minOpp<=2){
+      const safe=nonBomb.filter(m=>!(m.type==="single"&&m.rank<14&&!isTopRemaining(m.rank,hand)));
+      if(safe.length) return pickByTricks(hand,safe.sort((a,b)=>a.rank-b.rank));
+      const bomb=all.find(m=>m.type==="bomb"||m.type==="rocket");
+      if(bomb) return bomb;
+    }
+    // 平衡削弱：对手座位领出 40% 走次优
+    if(vsHuman && Math.random()<BAL.LEAD_SUBOPT){
+      const sorted=nonBomb.slice().sort((a,b)=>a.rank-b.rank||a.cards.length-b.cards.length);
+      return sorted[Math.min(2,sorted.length-1)];
+    }
+    return pickByTricks(hand,nonBomb.sort((a,b)=>a.rank-b.rank));   // 手数最优领出
+  } else { /* ---- 跟牌 ---- */
+    const bl=genBeatingForSeat(seat,prev);
+    const nonBomb=bl.filter(m=>m.type!=="bomb"&&m.type!=="rocket");
+    // 协作③：队友（另一个农民）正领出 → 自主判断：默认让牌，但"顺手出牌"可压队友
+    if(coop && G.lastSeat===partner){
+      const canFinish=nonBomb.find(m=>hand.length-m.cards.length===0);
+      if(canFinish) return canFinish;                       // 一手走完，当然压
+      if((partner+1)%3===landlord && G.passes>=1) return null; // 地主已让过，队友必得牌权 → 让牌
+      const play=coopMaybeBeatFarmer(seat,prev,nonBomb,hand,partner);
+      if(play) return play;                                 // 顺手出牌 / 护牌权：压队友
+      return null;                                          // 否则让牌
+    }
+    // 协作④：真人队友牌更少 → 让真人打（除非能一手走完）
+    if(coop && partner===0 && G.players[0].hand.length<=hand.length){
+      const canFinish=nonBomb.some(m=>hand.length-m.cards.length===0);
+      if(!canFinish && G.lastSeat!==landlord) return null;
+    }
+    if(nonBomb.length){
+      if(vsHuman && Math.random()<BAL.PASS_GIVE) return null;   // 平衡削弱：12% 送节奏
+      nonBomb.sort((a,b)=>a.cards.length-b.cards.length||a.rank-b.rank);
+      // 残局：对手 ≤2 张时用大牌压死，不给翻身机会
+      if(minOpp<=2 && (prev.type==="single"||prev.type==="pair")) return nonBomb[nonBomb.length-1];
+      return nonBomb[0];
+    }
+    // 炸弹时机：对手将走完 / 炸完自己 ≤2 手 / 手牌见底
+    const bomb=bl.find(m=>m.type==="bomb"||m.type==="rocket");
+    if(bomb){
+      const oppAboutToWin=(G.lastSeat>=0 && oppSeats.includes(G.lastSeat) && G.players[G.lastSeat].hand.length<=2);
+      const after=hand.filter(c=>!bomb.cards.some(x=>x.id===c.id));
+      if(oppAboutToWin || minTricks(after)<=2 || hand.length<=BAL.BOMB_THR) return bomb;
+    }
+    return null;
+  }
+}
+// 农民自主性：队友领出时，是否"顺手"压队友把自家想出的牌打掉（不浪费 2/王/炸弹，不白送牌权给地主）
+function coopMaybeBeatFarmer(seat,prev,nonBomb,hand,partner){
+  const landlord=G.landlord;
+  if(partner===0) return null;   // 不压真人农民的领出：既礼貌、又消除"naive 真人更常当农民→被 AI 顺手出牌帮到"的测量不对称
+  const g=groupByVal(hand);
+  const bombVals=Object.keys(g).map(Number).filter(v=>g[v].length===4);
+  const cands=nonBomb.filter(m=>
+    m.type!=="bomb" && m.type!=="rocket" &&
+    !m.cards.some(c=>c.v>=15) &&                  // 不拿 2/王压队友
+    !m.cards.some(c=>bombVals.includes(c.v))      // 不拆自己的炸弹
+  ).sort((a,b)=>a.rank-b.rank || a.cards.length-b.cards.length);
+  if(!cands.length) return null;
+  const nextSeat=(seat+1)%3;
+  // 护牌权：地主在我下家、队友打小牌 → 用中张(10-14)顶，避免牌权落地主
+  if(nextSeat===landlord && (prev.type==="single"||prev.type==="pair") && prev.rank<12){
+    const mid=cands.find(m=>m.rank>=10&&m.rank<=14);
+    if(mid) return mid;
+  }
+  // 顺手出牌：下家是队友 → 压了牌权落回队友，可放心甩自家可舍弃的牌
+  if(nextSeat===partner) return cands[0];
+  return null;                                      // 下家是地主且非护牌权 → 让牌（不白送牌权）
+}
+// 真人的强策略（熟练玩家代理，不被平衡削弱；v0.7 同步升级：手数评估 + 残局压制）
+function aiStrong(seat,prev){
+  const hand=G.players[seat].hand;
+  const opp=[0,1,2].filter(s=>s!==seat && (seat===G.landlord?true:s===G.landlord));
+  const minOpp=opp.length?Math.min(...opp.map(s=>G.players[s].hand.length)):20;
+  if(!prev){
+    const all=genAllMoves(hand);
+    const nonBomb=all.filter(m=>m.type!=="bomb"&&m.type!=="rocket");
+    if(nonBomb.length){
+      // 对手快走完 → 不送小单张
+      if(minOpp<=2){
+        const safe=nonBomb.filter(m=>!(m.type==="single"&&m.rank<14&&!isTopRemaining(m.rank,hand)));
+        if(safe.length) return pickByTricks(hand,safe.sort((a,b)=>a.rank-b.rank));
+      }
+      return pickByTricks(hand,nonBomb.sort((a,b)=>a.rank-b.rank));   // 手数最优领出
+    }
+    return all.sort((a,b)=>a.rank-b.rank)[0];
+  } else {
+    const beatsL=genBeating(hand,prev);
+    const nonBomb=beatsL.filter(m=>m.type!=="bomb"&&m.type!=="rocket");
+    if(hand.length<=2){const bomb=beatsL.find(m=>m.type==="bomb"||m.type==="rocket");if(bomb)return bomb;}
+    if(nonBomb.length){
+      nonBomb.sort((a,b)=>a.cards.length-b.cards.length||a.rank-b.rank);
+      if(minOpp<=2 && (prev.type==="single"||prev.type==="pair")) return nonBomb[nonBomb.length-1];  // 残局压死
+      return nonBomb[0];
+    }
+    const bomb=beatsL.find(m=>m.type==="bomb"||m.type==="rocket");
+    if(bomb){
+      const after=hand.filter(c=>!bomb.cards.some(x=>x.id===c.id));
+      if(hand.length<=5 || minTricks(after)<=2 || minOpp<=2) return bomb;
+    }
+    return null;
+  }
+}
+function aiBid(hand){
+  const g=groupByVal(hand);let s=0;
+  if(g[17])s+=2; if(g[16])s+=1; if(g[15])s+=g[15].length*0.8;
+  Object.values(g).forEach(arr=>{if(arr.length===4)s+=2;});
+  s+=hand.length*0.05;
+  if(s>=6)return 3; if(s>=3.5)return 2; if(s>=2)return 1; return 0;
+}
+function aiDouble(seat){ return Math.random()<0.45; }
+
+/* ============ 游戏状态 ============ */
+const G={
+  players:[{name:"你",hand:[]},{name:"AI 对手 ①",hand:[]},{name:"AI 对手 ②",hand:[]}],
+  bottom:[], landlord:-1, turn:0, lastMove:null, lastSeat:-1, phase:"idle", passes:0,
+  mult:1, bidStart:0, bidRound:[], bidMax:0, bidWinner:-1, doubleDone:false,
+  timer:HUMAN_TURN, timerId:null, aiTimer:null, immunityTimer:null, clockId:null, elapsed:0,
+  skillStar:null, skillUsed:false, jordanShield:true, forcedLead:-1, skillMode:null,
+  star:[null,null,null], ss:[freshSS(),freshSS(),freshSS()], _noAdvance:false,
+  durantSelect:false, candidates:[],
+  moveCount:0, humanTurns:0, aiTurns:0, humanStartStrength:0, humanStartBombs:0, bombPlayed:false
+};
+
+function log(t,me){const el=document.getElementById("log");const d=document.createElement("div");if(me)d.className="me";d.textContent=t;el.appendChild(d);el.scrollTop=el.scrollHeight;}
+
+/* ---- 入口：S0 入场 → S1 抽卡 ---- */
+function startGame(){ newGame(); }
+function newGame(){
+  clearTimers(); stopMatchClock();
+  G.skillStar=null; G.skillUsed=false; G.jordanShield=true; G.forcedLead=-1; G.skillMode=null; G.moveCount=0;
+  G.star=[null,null,null]; G.ss=[freshSS(),freshSS(),freshSS()]; G._noAdvance=false;
+  G.durantSelect=false; G.candidates=[];
+  G.bombPlayed=false; G.bombCount=0; G.elapsed=0; G.humanTurns=0; G.aiTurns=0;
+  G.players.forEach(p=>p.hand=[]); G.bottom=[]; G.landlord=-1; G.lastMove=null; G.lastSeat=-1;
+  G.mult=1; G.doubleDone=false; G.passes=0;
+  document.getElementById("log").innerHTML="";
+  document.getElementById("seat0").querySelector(".nm").innerHTML='🧑 你（？） <span class="tag" id="tag0" style="display:none">地主</span>';
+  [1,2].forEach(s=>{document.getElementById("tag"+s).style.display="none";document.getElementById("role"+s).textContent="";document.getElementById("bub"+s).textContent="";});
+  document.getElementById("tag0").style.display="none"; document.getElementById("role0").textContent=""; document.getElementById("bub0").textContent="";
+  document.getElementById("ovHl").style.display="none";
+  G.phase="pick";
+  setPhaseTxt("S1 · 选择你的球星卡（3 选 1 · 一局一次技能）");
+  renderPickStar();
+  renderAll();
+}
+function renderPickStar(){
+  const c=document.getElementById("controls");c.innerHTML="";
+  const keysAll=Object.keys(STARS);
+  // 每局随机抽 3 名不同球星供玩家选择
+  const cand=[]; while(cand.length<3){ const k=keysAll[Math.floor(Math.random()*keysAll.length)]; if(!cand.includes(k)) cand.push(k); }
+  G.candidates=cand;
+  const typeTxt=st=> st.type==='active'? '主动·一局一次' : (st.type==='reactive'? '反应·一局一次' : (st.type==='passive+active'? '被动+主动' : '被动·常驻'));
+  cand.forEach(k=>{
+    const st=STARS[k];
+    const b=document.createElement("button");b.className="btn starPick";
+    b.innerHTML=`<div class="spName">🏀 <b>${st.name}</b></div><div class="spSkill">${st.skill}</div><div class="spType">${typeTxt(st)}</div>`;
+    b.onclick=()=>pickStar(k);
+    b.onmouseenter=(e)=>showTip(st);
+    b.onmousemove=(e)=>moveTip(e);
+    b.onmouseleave=hideTip;
+    c.appendChild(b);
+  });
+}
+/* 悬停技能说明 tooltip */
+function ensureTip(){ let t=document.getElementById("skillTip"); if(!t){ t=document.createElement("div"); t.id="skillTip"; t.className="skillTip"; document.body.appendChild(t);} return t; }
+function showTip(st){ const t=ensureTip(); t.innerHTML=`<b>${st.name} · ${st.skill}</b><div class="tipType">${st.type==='active'?'主动技能':(st.type==='reactive'?'反应技能':(st.type==='passive+active'?'被动+主动':'被动技能'))} · ${st.cd||''}</div><div class="tipDesc">${st.desc}</div>`; t.style.display="block"; }
+function moveTip(e){ const t=ensureTip(); const w=t.offsetWidth||260; let x=e.clientX+14; if(x+w>window.innerWidth-10) x=e.clientX-w-14; t.style.left=x+"px"; t.style.top=(e.clientY+14)+"px"; }
+function hideTip(){ const t=document.getElementById("skillTip"); if(t) t.style.display="none"; }
+function pickStar(k){
+  hideTip();                                  // 选英雄后关闭技能说明浮窗
+  G.skillStar=k; G.star[0]=k;
+  const st=STARS[k];
+  // AI 两座随机抽星（与人类同池），初始化各座技能状态
+  const keys=Object.keys(STARS);
+  G.star[1]=keys[Math.floor(Math.random()*keys.length)];
+  G.star[2]=keys[Math.floor(Math.random()*keys.length)];
+  G.ss=[freshSS(),freshSS(),freshSS()];
+  document.getElementById("seat0").querySelector(".nm").innerHTML=`🧑 你（${st.name}） <span class="tag" id="tag0" style="display:none">地主</span>`;
+  const tl = st.type==='active' ? '主动' : (st.type==='reactive' ? '反应' : (st.type==='passive+active' ? '被动+主动' : '被动'));
+  log(`你选择了 ${st.name} · ${st.skill}（${tl}）｜AI：${STARS[G.star[1]].name} / ${STARS[G.star[2]].name}`);
+  startDeal();
+}
+
+/* ---- S2 发牌 + N4 极端坏牌兜底重发 + 发牌后排序 ---- */
+function startDeal(){
+  clearTimers(); stopMatchClock();
+  seenReset();                                    // v0.7：新局清空记牌器
+  const best=dealHands();
+  G.players[0].hand=best.p0; G.players[1].hand=best.p1; G.players[2].hand=best.p2; G.bottom=best.bottom;
+  G.players.forEach(p=>sortHand(p.hand));            // 发牌后所有手牌排序（成熟斗地主习惯）
+  // 乔丹·神之一手：万能牌 = 各座最低牌（2–A 可变，不可当王）
+  [0,1,2].forEach(s=>{ if(G.star[s]==='jordan'){ const h=G.players[s].hand; G.ss[s].wildId = h.length? worstCardOf(h).id : null; } });
+  G.humanStartStrength=handStrength(best.p0); G.humanStartBombs=countBombs(best.p0);
+  if(best.hasBomb) log("💣 本局含保底炸弹（娱乐化回调）");
+  log("发牌完成：每人 17 张，底牌 3 张（暗牌，确定地主后翻开）。");
+  G.phase="bid"; G.bidRound=[]; G.bidMax=0; G.bidWinner=-1;
+  G.bottomRevealed=false;                      // v0.7：底牌先暗，叫完地主再明
+  G.bidStart=Math.floor(Math.random()*3); G.turn=G.bidStart;
+  setPhaseTxt("叫地主（叫分制：1/2/3 分，叫 3 分立即当地主；都不叫则重发）");
+  renderAll();
+  showBottomCards();
+  stepBid();
+}
+
+/* ---- v0.7 标准叫分制（参照 QQ 斗地主经典规则）----
+ * 随机起叫，按位轮流叫 0/1/2/3 分；只能叫比当前更高的分；
+ * 叫 3 分立即成为地主（后位不再表态）；三家都不叫 → 重新发牌。
+ * 底分 = 最高叫分；炸弹/火箭与加倍在此基础上 ×2。
+ * （v0.6 的"抢地主"阶段废除：renderControls_rob 未定义导致真人路径必崩，
+ *   这就是"AI 叫分后玩家无响应/卡死"的根因。）*/
+function stepBid(){
+  if(G.bidRound.length>=3){ afterBid(); return; }
+  const seat=G.turn;
+  setPhaseTxt("叫地主（"+(G.bidRound.length+1)+"/3）· 当前最高："+(G.bidMax>0?G.bidMax+" 分（"+G.players[G.bidWinner].name+"）":"无人叫分"));
+  if(seat===0){
+    renderControls_bid();
+    startCountdown(BID_SECONDS, ()=>doBid(0,0));
+  } else {
+    setBubble(seat, "思考中…");
+    G.aiTimer=setTimeout(()=>{ const b=aiBid(G.players[seat].hand); doBid(seat, b>G.bidMax?b:0); },700);
+  }
+}
+function doBid(seat,b){
+  if(b>0 && b<=G.bidMax) b=0;                  // 防御：低于当前最高分的叫分一律按不叫处理
+  G.bidRound.push({seat,b});
+  if(b>0){ G.bidMax=b; G.bidWinner=seat; setBubble(seat,"叫 "+b+" 分"); }
+  else setBubble(seat,"不叫");
+  log(`${G.players[seat].name} ${b>0?("叫 "+b+" 分"):"不叫"}`);
+  renderAll();
+  if(b===3){ afterBid(); return; }             // 叫 3 分立即定地主（标准规则）
+  if(G.bidRound.length>=3){ afterBid(); return; }
+  G.turn=(G.turn+1)%3; stepBid();
+}
+function afterBid(){
+  clearTimers();
+  if(G.bidWinner===-1){
+    log("三家都不叫，重新发牌。");
+    setPhaseTxt("三家都不叫 · 正在重新发牌…");
+    setTimeout(startDeal,900); return;
+  }
+  finishBid();
+}
+function finishBid(){
+  G.landlord=G.bidWinner;
+  G.mult=G.bidMax;
+  // 成熟斗地主流程：底牌翻明 → 立即并入地主手牌并排序 → 再进入加倍阶段
+  G.bottomRevealed=true;
+  if(G.star[G.landlord]==='kidd'){ log(`👁 ${G.players[G.landlord].name}·球场视野：看底牌并自行分配（全留地主）`); }
+  G.players[G.landlord].hand=G.players[G.landlord].hand.concat(G.bottom);
+  sortHand(G.players[G.landlord].hand);
+  [0,1,2].forEach(s=>{document.getElementById("tag"+s).style.display=(s===G.landlord?"inline-block":"none");
+    document.getElementById("role"+s).textContent=(s===G.landlord?"地主":"农民");});
+  showBottomCards();
+  log(`地主是 ${G.players[G.landlord].name}（叫 ${G.bidMax} 分），3 张底牌已翻开并加入地主手牌。`);
+  setPhaseTxt("加倍阶段（底牌已并入地主手牌）");
+  G.phase="double"; G.turn=G.landlord; G.doubleDone=false;
+  renderAll();                                  // 关键：先看到地主 20 张手牌，再决定加不加倍
+  stepDouble();
+}
+function showBottomCards(){
+  const el=document.getElementById("bottomCards"); el.innerHTML="";
+  const lbl=document.createElement("span"); lbl.className="lbl"; lbl.textContent=G.bottomRevealed?"底牌":"底牌(暗)"; el.appendChild(lbl);
+  G.bottom.forEach(c=>{
+    const k=document.createElement("div");
+    if(!G.bottomRevealed){ k.className="card back"; }
+    else { k.className="card"+(c.red?" red":""); k.innerHTML=cardHTML(c); }
+    el.appendChild(k);
+  });
+}
+function stepDouble(){
+  if(G.doubleDone){ startPlay(); return; }
+  const seat=G.turn;
+  if(seat===0){
+    renderControls_double();
+    startCountdown(BID_SECONDS, ()=>{ G.doubleDone=true; renderAll(); startPlay(); });
+  } else {
+    setBubble(seat,"思考加倍…");
+    G.aiTimer=setTimeout(()=>{
+      if(aiDouble(seat)){G.mult*=2; setBubble(seat,"加倍"); log(`${G.players[seat].name} 加倍 → ×${G.mult}`);}
+      else setBubble(seat,"不加倍");
+      G.doubleDone=true; renderAll(); startPlay();
+    },700);
+  }
+}
+function renderControls_double(){
+  const c=document.getElementById("controls");c.innerHTML="";
+  const d=document.createElement("button");d.className="btn primary";d.textContent="加倍 ×2";
+  d.onclick=()=>{clearTimers();G.mult*=2;setBubble(0,"加倍");log(`你 加倍 → ×${G.mult}`);G.doubleDone=true;renderAll();startPlay();};
+  const nd=document.createElement("button");nd.className="btn";nd.textContent="不加倍";
+  nd.onclick=()=>{clearTimers();setBubble(0,"不加倍");log("你不加倍");G.doubleDone=true;renderAll();startPlay();};
+  c.append(d,nd);
+}
+
+/* ---- S4 出牌 ---- */
+function startPlay(){
+  G.phase="play"; G.turn=G.landlord; G.lastMove=null; G.lastSeat=-1; G.passes=0;
+  setPhaseTxt("出牌阶段 · 地主先手");
+  startClock();          // 真实墙钟开始计时（DEC-011：elapsed 计数 + 软上限）
+  renderAll();
+  nextTurn();
+}
+/* ============================================================================
+ *  NBA Poker · 15 球星技能系统（v0.7 忠实实现，2026-08-03）
+ *  机制/边界见 02_mecha_gameplay/PLAYER_SKILLS_v0.2.md（四-G 命名总表）
+ *  SKILLS_OFF=true 时全部技能失效（门禁 naive 对照）
+ *  人类与 AI 座均从 STARS 池抽星，机制完全通用（autoPlaySeat 统一驱动）
+ * ==========================================================================*/
+var SKILLS_OFF=false;
+function freshSS(){ return { used:{}, foul:{}, drawn:{}, types:new Set(), pairs:0, discarded:0,
+  jokicUsed:false, curryUsed:0, hardenUsed:false, lebronUsed:false, wembyUsed:false,
+  oNealUsed:false, durantUsed:false, retakeReady:false, _lastHadMax:false,
+  doncicUsed:false, duncanUsed:false, wildId:null, kiddSeen:false }; }
+function oppAll(s){ return [0,1,2].filter(x=>x!==s); }
+function isFoe(a,b){ return (a===G.landlord)?(b!==G.landlord):(b===G.landlord); }
+function maxCardOf(h){ return h.length? h.slice().sort((x,y)=>y.v-x.v)[0]:null; }
+function worstCardOf(h){ return h.length? h.slice().sort((x,y)=>x.v-y.v)[0]:null; }
+function maxNonJokerOf(h){ const v=h.filter(c=>c.v<16).map(c=>c.v); return v.length?Math.max(...v):0; }
+function remapLevel(v){ return v<15? Math.min(16,v+1):v; }
+function sameCardSet(a,b){ if(!a||!b||a.cards.length!==b.cards.length) return false; const sa=new Set(a.cards.map(c=>c.id)),sb=new Set(b.cards.map(c=>c.id)); return [...sa].every(id=>sb.has(id)); }
+function genAllForSeat(seat){
+  const hand=G.players[seat].hand, st=G.star[seat], out=[];
+  out.push(...genAllMoves(hand));
+  if(SKILLS_OFF) return out;
+  if(st==='brunson' && hand.length<=5){ const tmp=hand.map(c=>({...c,v:remapLevel(c.v)})); out.push(...genAllMoves(tmp).map(mv=>({...mv,cards:mv.cards.map(mc=>hand.find(h=>h.id===mc.id))}))); }
+  if(st==='jordan' && G.ss[seat].wildId!=null){ const wid=G.ss[seat].wildId; for(let r=3;r<=15;r++){ const tmp=hand.map(c=>c.id===wid?{...c,v:r}:c); out.push(...genAllMoves(tmp).map(mv=>({...mv,cards:mv.cards.map(mc=>hand.find(h=>h.id===mc.id))}))); } }
+  return out;
+}
+function genBeatingForSeat(seat,prev){
+  const hand=G.players[seat].hand, st=G.star[seat], out=[];
+  out.push(...genBeating(hand,prev));
+  if(SKILLS_OFF) return out;
+  if(st==='brunson' && hand.length<=5){ const tmp=hand.map(c=>({...c,v:remapLevel(c.v)})); out.push(...genBeating(tmp,prev).map(mv=>({...mv,cards:mv.cards.map(mc=>hand.find(h=>h.id===mc.id))}))); }
+  if(st==='jordan' && G.ss[seat].wildId!=null){ const wid=G.ss[seat].wildId; for(let r=3;r<=15;r++){ const tmp=hand.map(c=>c.id===wid?{...c,v:r}:c); out.push(...genBeating(tmp,prev).map(mv=>({...mv,cards:mv.cards.map(mc=>hand.find(h=>h.id===mc.id))}))); } }
+  return out;
+}
+function strongPick(seat, moves, prev){
+  if(!moves||!moves.length) return null;
+  const hand=G.players[seat].hand;
+  const nonBomb=moves.filter(m=>m.type!=='bomb'&&m.type!=='rocket');
+  const opp=oppAll(seat).filter(s=>isFoe(seat,s));
+  const minOpp=opp.length?Math.min(...opp.map(s=>G.players[s].hand.length)):20;
+  if(!prev){
+    if(nonBomb.length){ if(minOpp<=2){ const safe=nonBomb.filter(m=>!(m.type==='single'&&m.rank<14&&!isTopRemaining(m.rank,hand))); if(safe.length) return pickByTricks(hand, safe.sort((a,b)=>a.rank-b.rank)); } return pickByTricks(hand, nonBomb.sort((a,b)=>a.rank-b.rank)); }
+    return moves.sort((a,b)=>a.rank-b.rank)[0];
+  } else {
+    if(hand.length<=2){ const b=moves.find(m=>m.type==='bomb'||m.type==='rocket'); if(b) return b; }
+    if(nonBomb.length){ nonBomb.sort((a,b)=>a.cards.length-b.cards.length||a.rank-b.rank); if(minOpp<=2 && (prev.type==='single'||prev.type==='pair')) return nonBomb[nonBomb.length-1]; return nonBomb[0]; }
+    const b=moves.find(m=>m.type==='bomb'||m.type==='rocket');
+    if(b){ const after=hand.filter(c=>!b.cards.some(x=>x.id===c.id)); if(hand.length<=5||minTricks(after)<=2||minOpp<=2) return b; }
+    return null;
+  }
+}
+function curryReorgMove(seat){
+  const hand=G.players[seat].hand, g={}; hand.forEach(c=>(g[c.v]=g[c.v]||[]));
+  const pr=Object.keys(g).map(Number).find(v=>g[v].length>=2 && v<16);
+  if(pr===undefined) return null;
+  return buildReorgMove([g[pr][0].id, g[pr][1].id]);
+}
+function jokicSwap(seat){
+  const S=G.ss[seat]; if(S.jokicUsed) return; const hand=G.players[seat].hand;
+  const others=oppAll(seat).filter(s=>G.players[s].hand.length>0);
+  if(!others.length||hand.length===0) return;
+  const os=others[Math.floor(Math.random()*others.length)];
+  if(G.star[os]==='duncan'){ log(`🛡 ${G.players[os].name}·石佛免疫了约基奇的换牌`); S.jokicUsed=true; return; }
+  const oc=G.players[os].hand[Math.floor(Math.random()*G.players[os].hand.length)];
+  const wc=worstCardOf(hand);
+  G.players[seat].hand=hand.filter(c=>c.id!==wc.id).concat([oc]);
+  G.players[os].hand=G.players[os].hand.filter(c=>c.id!==oc.id).concat([wc]);
+  S.jokicUsed=true; log(`🔄 ${G.players[seat].name}·移花接木：与 ${G.players[os].name} 互换一张牌`);
+}
+function alexanderDraw(seat, target){
+  const S=G.ss[seat]; if(S.drawn[target]) return; const tgt=G.players[target].hand; if(!tgt.length){ S.drawn[target]=true; return; }
+  if(G.star[target]==='duncan'){ log(`🛡 ${G.players[target].name}·石佛免疫了亚历山大的抽取`); S.drawn[target]=true; return; }
+  const idx=Math.floor(Math.random()*tgt.length); const card=tgt[idx]; S.drawn[target]=true;
+  const keep=(card.v>=11||card.v>=16||Math.random()<0.5);
+  if(keep){ G.players[seat].hand=G.players[seat].hand.concat([card]); G.players[target].hand=tgt.filter(c=>c.id!==card.id); log(`🃏 ${G.players[seat].name}·造犯规：抽取 ${G.players[target].name} 一张牌（保留）`); }
+  else { G.players[target].hand=tgt.filter(c=>c.id!==card.id); log(`🃏 ${G.players[seat].name}·造犯规：抽取 ${G.players[target].name} 一张牌（弃掉）`); }
+}
+function doncicMaybeCopy(seat){
+  const S=G.ss[seat]; if(S.doncicUsed) return; const hand=G.players[seat].hand;
+  if(S.types.size>=3){ const mx=maxNonJokerOf(hand); if(mx){ const src=hand.find(c=>c.v===mx); if(src){ G.players[seat].hand=hand.concat([{...src,id:'CP'+(++CARD_SEQ)}]); S.doncicUsed=true; log(`✨ ${G.players[seat].name}·luka magic：复制一张 ${LABEL[mx]}`); } } }
+}
+function nowitzkiMaybeDiscard(seat){
+  const S=G.ss[seat]; const hand=G.players[seat].hand;
+  if(Math.floor(S.pairs/2) > S.discarded){ const w=worstCardOf(hand); if(w){ G.players[seat].hand=hand.filter(c=>c.id!==w.id); S.discarded++; log(`🪶 ${G.players[seat].name}·金鸡独立：弃掉 ${LABEL[w.v]}`); } }
+}
+function hardenPick(seat,mv){
+  const all=genAllForSeat(seat).filter(m=>m.type===mv.type && m.cards.length===mv.cards.length && !sameCardSet(m,mv));
+  if(!all.length) return null;
+  return strongPick(seat, all.sort((a,b)=>a.rank-b.rank), null);
+}
+/* 统一驱动：人类(强策略)/AI 座(原 aiChoose 保留平衡削弱) 均走此函数，技能机制完全通用 */
+function autoPlaySeat(seat, prev){
+  const st=G.star[seat], S=G.ss[seat];
+  if(SKILLS_OFF || !st){ const mv=(seat===0)?aiStrong(seat,prev):aiChoose(seat,prev); applyMove(seat,mv); return; }
+  const hand=G.players[seat].hand;
+  if(!prev){ // ---------- 领出 ----------
+    if(st==='kobe'){ const all=genAllForSeat(seat); const fin=all.find(m=>m.cards.length===hand.length); if(fin){ commitMove(seat,fin); return; } }
+    if(st==='durant' && S.retakeReady && !S.durantUsed){ const cand=hand.filter(c=>c.v>=11 && c.v<=15); if(cand.length){ cand.sort((a,b)=>a.v-b.v); const dc=cand[0]; G.players[seat].hand=hand.filter(c=>c.id!==dc.id); S.durantUsed=true; S.retakeReady=false; G.lastMove=null; G.passes=0; log(`💀 ${G.players[seat].name}·死神降临：弃 ${LABEL[dc.v]}（>10）重夺出牌权`); } }
+    if(st==='jokic' && !S.jokicUsed && hand.length>1){ jokicSwap(seat); }
+    if(st==='alexander'){ const t=Object.keys(S.foul).find(k=>(S.foul[k]||0)>=4 && !S.drawn[k]); if(t!==undefined) alexanderDraw(seat, +t); }
+    const all=genAllForSeat(seat);
+    const mv=(seat===0)? strongPick(seat, all, null) : aiChoose(seat, null);
+    if(st==='curry' && S.curryUsed<2){ const t=curryReorgMove(seat); if(t){ S.curryUsed++; commitMove(seat,t); return; } }
+    if(st==='harden' && !S.hardenUsed && mv){ const m2=hardenPick(seat,mv); if(m2){ G._noAdvance=true; commitMove(seat,mv); S.hardenUsed=true; commitMove(seat,m2); return; } }
+    if(mv){ commitMove(seat,mv); return; }
+    applyMove(seat,null); return;
+  } else { // ---------- 跟牌 ----------
+    if(st==='lebron' && !S.lebronUsed && prev.type==='single' && G.passes>=1){ G.players[seat].hand=G.players[seat].hand.concat([prev.cards[0]]); G.lastMove=null; G.passes=0; S.lebronUsed=true; log(`👑 ${G.players[seat].name}·加冕：截下 ${LABEL[prev.cards[0].v]} 并领出`); const a2=genAllForSeat(seat); const m2=(seat===0)?strongPick(seat,a2,null):aiChoose(seat,null); if(m2) commitMove(seat,m2); else applyMove(seat,null); return; }
+    const mv=(seat===0)? strongPick(seat, genBeatingForSeat(seat,prev), prev) : aiChoose(seat, prev);
+    if(mv){ commitMove(seat,mv); return; }
+    applyMove(seat,null); return;
+  }
+}
+function postMoveSkills(seat,mv){
+  const S=G.ss[seat]; if(!S||!mv) return;
+  if(mv.type==='pair'||mv.type==='double') S.pairs += (mv.type==='double'? mv.len : 1);
+  if(G.star[seat]==='doncic'){ S.types.add(mv.type); doncicMaybeCopy(seat); }
+  if(G.star[seat]==='nowitzki'){ nowitzkiMaybeDiscard(seat); }
+}
+
+function nextTurn(){
+  clearTimers();
+  if(G.phase!=="play") return;
+  if(G._noAdvance){ G._noAdvance=false; return; }   // 哈登·and one 连击：不让出回合
+  const seat=G.turn;
+  setActiveSeat(seat);
+  if(seat===0) enableHumanTurn();
+  else {
+    setBubble(seat,"出牌中…");
+    G.aiTimer=setTimeout(()=>{ autoPlaySeat(seat, G.lastMove); },800);
+  }
+}
+function applyMove(seat,mv){ commitMove(seat,mv); }
+function commitMove(seat,mv){
+  G.moveCount++;
+  if(seat===0) G.humanTurns++; else G.aiTurns++;
+  if(mv){
+    // 文班·遮天蔽日：对手炸弹/火箭 → 抵消（视作对手不出，王炸不可抵消）
+    if((mv.type==="bomb"||mv.type==="rocket") && G.lastSeat>=0){
+      const W=oppAll(seat).find(s=>G.star[s]==="wembanyama" && !G.ss[s].wembyUsed && isFoe(s,seat));
+      if(W!==undefined){ G.ss[W].wembyUsed=true; log(`🚫 ${G.players[W].name}·遮天蔽日：抵消 ${G.players[seat].name} 的${mv.type==="rocket"?"王炸":"炸弹"}`); commitMove(seat,null); return; }
+    }
+    const victim=G.lastSeat;                                   // 被本手压制的上家（领出者）
+    const ids=new Set(mv.cards.map(c=>c.id));
+    // 杜兰特·死神降临：记录本手是否含打出前最大牌（用于被压时标记重夺）
+    const handBefore=G.players[seat].hand;
+    const handMaxB=maxNonJokerOf(handBefore);
+    const mvMax=Math.max(0,...mv.cards.map(c=>c.v).filter(v=>v<16));
+    G.ss[seat]._lastHadMax = handMaxB>0 && mvMax>=handMaxB;
+    G.players[seat].hand=handBefore.filter(c=>!ids.has(c.id));
+    seenAdd(mv.cards);                                   // v0.7：AI 记牌器
+    G.lastMove=mv; G.lastSeat=seat; G.passes=0;
+    setBubble(seat, moveName(mv));
+    log(`${G.players[seat].name} 出 ${moveName(mv)}`, seat===0);
+    if(mv.type==="bomb"||mv.type==="rocket"){G.mult*=2; G.bombCount++; log(`💥 炸弹/火箭！倍数 ×${G.mult}`); if(seat===0)G.bombPlayed=true;}
+    // 亚历山大·造犯规：本座领出被对手压 → 压人者+1犯规
+    if(victim>=0 && G.star[victim]==="alexander" && isFoe(seat,victim)){ G.ss[victim].foul[seat]=(G.ss[victim].foul[seat]||0)+1; }
+    // 杜兰特·死神降临：本座上次打出含最大牌且被压 → 标记可重夺
+    if(victim>=0 && G.star[victim]==="durant" && !G.ss[victim].durantUsed && G.ss[victim]._lastHadMax){ G.ss[victim].retakeReady=true; }
+    postMoveSkills(seat,mv);
+  } else {
+    G.passes++;
+    setBubble(seat,"不出");
+    log(`${G.players[seat].name} 不出`, seat===0);
+  }
+  renderAll();
+  if(G.players[seat].hand.length===0){ endGame(seat); return; }
+  if(G.passes>=2){
+    let lead=G.lastSeat;
+    if(G.forcedLead>=0){ log(`🏀 詹姆斯·传球组织：强制 ${G.players[G.forcedLead].name} 先手`); lead=G.forcedLead; G.forcedLead=-1; }
+    G.turn=lead; G.lastMove=null; G.passes=0; setPhaseTxt(`${G.players[lead].name} 获得自由出牌`);
+  }
+  else { G.turn=(seat+1)%3; }
+  nextTurn();
+}
+function moveName(mv){
+  const names={single:"单张",pair:"对子",triple:"三张",triple1:"三带一",triple2:"三带二",straight:"顺子",double:"连对",airplane:"飞机",airplane1:"飞机带单",airplane2:"飞机带对",bomb:"炸弹",rocket:"火箭"};
+  const top=LABEL[mv.rank]||"";
+  const tag=mv._phantom?"★":"";
+  return `${names[mv.type]||mv.type}(${top})${tag}`;
+}
+
+/* ---- 玩家回合 ---- */
+let selected=new Set();
+function enableHumanTurn(){
+  selected.clear();
+  // 杜兰特·死神降临：重夺选择模式（仅限真实 UI 人类，headless 由 autoPlaySeat 自动弃最小>10牌）
+  if(G.star[0]==='durant' && G.ss[0].retakeReady && !G.ss[0].durantUsed && G.phase==='play' && !G.lastMove){
+    enterDurantRetake(); return;
+  }
+  renderHand();
+  startCountdown(HUMAN_TURN, ()=>{
+    if(G.lastMove){ log("⏱ 超时，自动不出",true); applyMove(0,null); }
+    else {
+      const m=genAllMoves(G.players[0].hand).filter(x=>x.type!=="bomb"&&x.type!=="rocket").sort((a,b)=>a.rank-b.rank)[0]
+             || genAllMoves(G.players[0].hand).sort((a,b)=>a.rank-b.rank)[0];
+      log("⏱ 超时，自动出最小牌",true); applyMove(0,m);
+    }
+  });
+  renderHumanControls();
+}
+function enterDurantRetake(){
+  G.durantSelect=true;
+  setPhaseTxt("💀 死神降临：选择一张大于10的牌（J/Q/K/A/2）弃掉以重夺出牌权，或放弃");
+  renderHand();
+  const c=document.getElementById("controls");c.innerHTML="";
+  const give=document.createElement("button");give.className="btn";give.textContent="放弃重夺";
+  give.onclick=()=>{ G.durantSelect=false; G.ss[0].retakeReady=false; G.ss[0].durantUsed=true; log("💀 死神降临：放弃重夺",true); enableHumanTurn(); };
+  c.appendChild(give);
+}
+function doDurantDiscard(c){
+  G.players[0].hand=G.players[0].hand.filter(x=>x.id!==c.id);
+  G.ss[0].durantUsed=true; G.ss[0].retakeReady=false; G.durantSelect=false;
+  G.lastMove=null; G.passes=0;
+  log(`💀 ${G.players[0].name}·死神降临：弃 ${LABEL[c.v]}（>10）重夺出牌权`,true);
+  renderAll();
+  enableHumanTurn();   // 重夺后正常出牌
+}
+/* ---- 真人主动技能：点击只发动技能，绝不自动出牌（避免"技能可无限用"错觉） ---- */
+function isManualStar(st){ return st==='curry'||st==='alexander'||st==='lebron'||st==='jokic'; }
+function skillAvailable(seat){
+  const st=G.star[seat], S=G.ss[seat], hand=G.players[seat].hand, prev=G.lastMove;
+  if(st==='curry') return S.curryUsed<2 && hand.some((c,i)=>hand.some((d,j)=>j>i&&d.v===c.v&&c.v<16));
+  if(st==='alexander') return Object.keys(S.foul).some(k=>(S.foul[k]||0)>=4 && !S.drawn[k]);
+  if(st==='lebron') return !S.lebronUsed && !!prev && prev.type==='single' && G.passes>=1;
+  if(st==='jokic') return !S.jokicUsed && hand.length>1;
+  return false;
+}
+function skillUnavailText(st){ const S=G.ss[0];
+  if(st==='curry') return S.curryUsed>=2?'已用尽 2/2':'无对子';
+  if(st==='alexander') return '犯规不足4';
+  if(st==='lebron') return '需单牌被压';
+  if(st==='jokic') return '已用尽';
+  return '';
+}
+function humanUseSkill(){
+  const seat=0, st=G.star[0], S=G.ss[0], hand=G.players[0].hand, prev=G.lastMove;
+  if(st==='curry' && S.curryUsed<2){ const t=curryReorgMove(0); if(t){ S.curryUsed++; log(`🏀 ${G.players[0].name}·百步穿杨：重组三连`,true); commitMove(0,t); return; } }
+  if(st==='alexander'){ const t=Object.keys(S.foul).find(k=>(S.foul[k]||0)>=4 && !S.drawn[k]);
+    if(t!==undefined){ alexanderDraw(0,+t); log(`🏀 你发动了【造犯规】`,true); enableHumanTurn(); return; } }
+  if(st==='lebron' && !S.lebronUsed && prev && prev.type==='single' && G.passes>=1){
+    G.players[0].hand=G.players[0].hand.concat([prev.cards[0]]); G.lastMove=null; G.passes=0; S.lebronUsed=true;
+    log(`👑 ${G.players[0].name}·加冕：截下 ${LABEL[prev.cards[0].v]} 并领出`,true);
+    const a2=genAllForSeat(0); const m2=strongPick(0,a2,null); if(m2) commitMove(0,m2); else applyMove(0,null); return; }
+  if(st==='jokic' && !S.jokicUsed && hand.length>1){ jokicSwap(0); log(`🏀 你发动了【移花接木】`,true); enableHumanTurn(); return; }
+  log('🏀 当前没有可用的主动技能',true); renderHumanControls();
+}
+function renderHumanControls(){
+  const c=document.getElementById("controls");c.innerHTML="";
+  const play=document.createElement("button");play.className="btn primary";play.id="btnPlay";play.textContent="出牌";play.disabled=true;
+  play.onclick=()=>onPlay();
+  const pass=document.createElement("button");pass.className="btn";pass.id="btnPass";pass.textContent="不出";
+  pass.disabled=!G.lastMove;
+  pass.onclick=()=>{clearTimers();applyMove(0,null);};
+  const hint=document.createElement("button");hint.className="btn go";hint.id="btnHint";hint.textContent="提示";
+  hint.onclick=()=>showHint();
+  c.append(play,pass,hint);
+  // 技能按钮：仅手动主动星显示；条件不满足/已用尽时置灰锁定，点击只发动技能、不再自动出牌（避免"可无限用"错觉）
+  if(G.star[0] && !SKILLS_OFF && G.phase==="play"){
+    const st=G.star[0];
+    if(isManualStar(st)){
+      const avail=skillAvailable(0);
+      const sb=document.createElement("button"); sb.className="btn go"+(avail?"":" disabled");
+      sb.textContent = avail ? `🏀 发动【${STARS[st].skill}】` : `🔒 ${STARS[st].skill}（${skillUnavailText(st)}）`;
+      if(avail) sb.onclick=()=>{ clearTimers(); humanUseSkill(); };
+      c.appendChild(sb);
+    } else {
+      const tag = st.type==='active' ? '🏀 主动技能' : (st.type==='reactive' ? '⚡ 反应技能' : '🛡 被动技能');
+      const note=document.createElement("div"); note.className="skillNote"; note.textContent=`${tag}【${STARS[st].skill}】·自动触发`;
+      c.appendChild(note);
+    }
+  }
+}
+function onPlay(){
+  if(G.skillMode==="curry"){
+    const mv=buildReorgMove([...selected]);
+    if(!mv){alert("三分雨：请选择一对（或一对+单/对）作为三连");return;}
+    if(G.lastMove && !beats(G.lastMove,mv)){alert("三连管不上上家");return;}
+    G.skillUsed=true; G.skillMode=null; clearTimers();
+    const real=[...selected]; selected.clear();
+    log(`🏀 库里·三分雨：重组三连 ${moveName(mv)}`,true);
+    commitMove(0,mv);
+    return;
+  }
+  const cards=[...selected].map(id=>G.players[0].hand.find(x=>x.id==id));
+  const mv=parseMove(cards);
+  if(!mv){alert("牌型不合法");return;}
+  if(!beats(G.lastMove,mv)){alert("管不上上家");return;}
+  clearTimers(); selected.clear(); applyMove(0,mv);
+}
+function buildReorgMove(ids){
+  if(ids.length<2) return null;
+  const cards=ids.map(id=>G.players[0].hand.find(x=>x.id==id));
+  if(cards.some(c=>!c)) return null;
+  const g={}; cards.forEach(c=>(g[c.v]=g[c.v]||[]).push(c));
+  const ranks=Object.keys(g).map(Number);
+  if(ids.length===2 && ranks.length===1){
+    const r=ranks[0];
+    return {type:"triple",rank:r,len:1,_phantom:true,cards:[g[r][0],g[r][1],mkPhantom(r)]};
+  }
+  if(ids.length===3){
+    const pr=ranks.find(r=>g[r].length===2), sr=ranks.find(r=>g[r].length===1);
+    if(pr!==undefined&&sr!==undefined&&pr!==sr)
+      return {type:"triple1",rank:pr,len:1,_phantom:true,cards:[g[pr][0],g[pr][1],mkPhantom(pr),g[sr][0]]};
+  }
+  if(ids.length===4){
+    const pr=ranks.find(r=>g[r].length===2);
+    if(ranks.length===2 && pr!==undefined){
+      const or=ranks.find(r=>r!==pr);
+      return {type:"triple2",rank:pr,len:1,_phantom:true,cards:[g[pr][0],g[pr][1],mkPhantom(pr),g[or][0],g[or][1]]};
+    }
+  }
+  return null;
+}
+function mkPhantom(v){ return {id:"PH"+(++CARD_SEQ),v,s:"",red:false,label:LABEL[v],phantom:true}; }
+
+function useLebronForce(){
+  const farmers=[0,1,2].filter(s=>s!==G.landlord && s!==0);
+  const c=document.getElementById("controls");c.innerHTML="";
+  setPhaseTxt("传球组织：选择要强制先手的农民");
+  farmers.forEach(s=>{
+    const b=document.createElement("button");b.className="btn primary";b.textContent="强制 "+G.players[s].name+" 先手";
+    b.onclick=()=>{ G.forcedLead=s; G.skillUsed=true;
+      log(`🏀 詹姆斯·传球组织：强制 ${G.players[s].name} 下一手先出牌`,true);
+      G.skillMode=null; selected.clear(); renderHand(); renderHumanControls(); };
+    c.appendChild(b);
+  });
+  const cancel=document.createElement("button");cancel.className="btn";cancel.textContent="取消";
+  cancel.onclick=()=>{ G.skillMode=null; selected.clear(); renderHand(); renderHumanControls(); };
+  c.appendChild(cancel);
+}
+function showHint(){
+  const moves=G.lastMove?genBeating(G.players[0].hand,G.lastMove):genAllMoves(G.players[0].hand).filter(m=>m.type!=="bomb"&&m.type!=="rocket");
+  if(!moves.length){alert("没有能管的牌，建议不出");return;}
+  const m=moves.sort((a,b)=>a.cards.length-b.cards.length)[0];
+  selected=new Set(m.cards.map(c=>c.id));
+  renderHand(); updatePlayBtn();
+}
+function updatePlayBtn(){const b=document.getElementById("btnPlay");if(b)b.disabled=selected.size===0;}
+
+function startCountdown(seconds, onTimeout){
+  if(G.timerId) clearInterval(G.timerId);
+  G.timer=seconds; updateTimer();
+  G.timerId=setInterval(()=>{
+    G.timer--; updateTimer();
+    if(G.timer<=0){ clearInterval(G.timerId); G.timerId=null; if(onTimeout) onTimeout(); }
+  },1000);
+}
+function updateTimer(){document.getElementById("timerTxt").textContent="⏱ "+G.timer+"s";}
+
+/* ---- 真实墙钟（DEC-011：elapsed 计数 + ~480s 软上限提示） ---- */
+function startClock(){
+  if(G.clockId) return;            // 整局只启动一次，避免被 nextTurn 的 clearTimers 反复重置
+  G.elapsed=0; updateClock();
+  G.clockId=setInterval(()=>{
+    G.elapsed++; updateClock();
+    if(G.elapsed===SOFT_CAP) log("⏱ 本局已达软上限 8 分钟，建议加快节奏（不强制结束）");
+  },1000);
+}
+function updateClock(){const m=Math.floor(G.elapsed/60),s=G.elapsed%60;document.getElementById("clockTxt").textContent="本局 "+m+":"+(s<10?"0":"")+s;}
+
+/* ---- 乔丹·最后一投 免疫决策 ---- */
+function offerImmunity(seat,mv){
+  setPhaseTxt("🛡 乔丹·最后一投：是否免疫这次 "+(mv.type==="rocket"?"王炸":"炸弹")+"？");
+  setBubble(seat, (mv.type==="rocket"?"王炸":"炸弹")+"！");
+  const c=document.getElementById("controls");c.innerHTML="";
+  const b=document.createElement("button");b.className="btn primary";b.textContent="🛡 免疫（最后一投）";
+  b.onclick=()=>{ clearTimeout(G.immunityTimer); G.jordanShield=false;
+    log(`🛡 乔丹免疫了 ${G.players[seat].name} 的${mv.type==="rocket"?"王炸":"炸弹"}！出牌权保留`,true);
+    G.turn=0; G.lastMove=null; G.passes=0;
+    renderAll(); nextTurn(); };
+  const no=document.createElement("button");no.className="btn";no.textContent="不免疫";
+  no.onclick=()=>{ clearTimeout(G.immunityTimer); commitMove(seat,mv); };
+  c.append(b,no);
+  G.immunityTimer=setTimeout(()=>{ commitMove(seat,mv); },5000);
+}
+
+/* ---- 结束 ---- */
+function endGame(winner){
+  clearTimers(); stopMatchClock();
+  G.phase="over";
+  const landlordWin=(winner===G.landlord);
+  const title=landlordWin?"地主胜":"农民胜";
+  const skillNote = G.star[0] ? (`｜技能：${STARS[G.star[0]].name}·${STARS[G.star[0]].skill}`) : "";
+  // 高光归因（H1–H6 轻量版，仅供 UI 展示）
+  const hl=[];
+  if(G.star[0]) hl.push("技能在场");
+  if(G.bombPlayed) hl.push("炸场");
+  if(G.mult>=4) hl.push("倍数×"+G.mult);
+  if(G.humanStartBombs>0) hl.push("起手炸弹");
+  const m=Math.floor(G.elapsed/60),s=G.elapsed%60;
+  recordTelemetry({elapsed:G.elapsed, humanTurns:G.humanTurns, aiTurns:G.aiTurns, moves:G.moveCount, winner, landlordWin, mult:G.mult, skill:G.skillStar, skillUsed:G.skillUsed, bombPlayed:G.bombPlayed, date:new Date().toISOString()});
+  document.getElementById("ovTitle").textContent=(winner===0? "🏆 你赢了":"😖 本局结束");
+  const hlEl=document.getElementById("ovHl");
+  if(hl.length){ hlEl.style.display="block"; hlEl.textContent="✨ 高光：" + hl.join(" · "); } else hlEl.style.display="none";
+  document.getElementById("ovSub").textContent=`${title} · 最终倍数 ×${G.mult} · 胜者：${G.players[winner].name} · 本局 ${m}:${s<10?"0":""}${s}`;
+  const roles=["你","AI ①","AI ②"].map((nm,x)=>`${nm}·${x===G.landlord?"地主":"农民"}`).join(" ｜ ");
+  const stats=document.getElementById("ovStats");
+  stats.style.display="block";
+  stats.innerHTML=`
+    <h4>📊 本局数据面板</h4>
+    <div class="srow"><span>结果</span><b class="${landlordWin?'win':'lose'}">${title}（${G.players[winner].name}）</b></div>
+    <div class="srow"><span>身份</span><b>${roles}</b></div>
+    <div class="srow"><span>倍数构成</span><b>叫${G.bidMax} → 抢×${G.mult/G.bidMax} → 总×${G.mult}</b></div>
+    <div class="srow"><span>炸弹/火箭</span><b>${G.bombCount} 次</b></div>
+    <div class="srow"><span>各家剩余牌</span><b>${G.players.map(p=>p.hand.length).join(' / ')}</b></div>
+    <div class="srow"><span>人类/AI 思考回合</span><b>${G.humanTurns} / ${G.aiTurns}</b></div>
+    <div class="srow"><span>起手强度</span><b>${G.humanStartStrength.toFixed(1)}</b></div>
+    <div class="srow"><span>本局时长</span><b>${m}:${s<10?"0":""}${s}</b></div>`;
+  document.getElementById("overlay").classList.add("on");
+  log(`🏁 结束：${title}｜胜者 ${G.players[winner].name}｜倍数 ×${G.mult}${skillNote}｜起手强度 ${G.humanStartStrength.toFixed(1)}｜步数 ${G.moveCount}｜本局 ${m}:${s<10?"0":""}${s}${hl.length?"｜高光 "+hl.join("/"):""}`);
+}
+function clearTimers(){
+  if(G.timerId){clearInterval(G.timerId);G.timerId=null;}
+  if(G.aiTimer){clearTimeout(G.aiTimer);G.aiTimer=null;}
+  if(G.immunityTimer){clearTimeout(G.immunityTimer);G.immunityTimer=null;}
+  // 墙钟 clockId 不在每回合清理，由 stopMatchClock 在开局/结束时清理
+}
+function stopMatchClock(){ if(G.clockId){clearInterval(G.clockId);G.clockId=null;} }
+
+/* ============ 渲染 ============ */
+function setActiveSeat(s){[0,1,2].forEach(x=>document.getElementById("seat"+x).classList.toggle("active",x===s));}
+function setBubble(s,t){document.getElementById("bub"+s).textContent=t;}
+function setPhaseTxt(t){document.getElementById("phaseTxt").textContent=t;}
+function renderAll(){renderHands();renderCounts();renderLast();renderMult();renderClock();renderSkillStatus();}
+function renderSkillStatus(){
+  const el=document.getElementById("skillTxt"); if(!el) return;
+  if(!G.star[0]){el.textContent="";return;}
+  const st=STARS[G.star[0]], S=G.ss[0];
+  let used="可用";
+  if(st.key==="curry") used=S.curryUsed>=2?"已用 · 2/2":"可用 · "+(2-S.curryUsed)+"/2";
+  else if(st.key==="durant"||st.key==="harden"||st.key==="oNeal"||st.key==="jokic"||st.key==="wembanyama") used=S[st.key+"Used"]?"已用 · 一局一次":"可用 · 一局一次";
+  else if(st.key==="lebron") used=S.lebronUsed?"已用 · 一局一次":"可用 · 一局一次";
+  else if(st.key==="doncic") used=S.doncicUsed?"已触发":"待命（打出3+牌型触发）";
+  else if(st.key==="duncan") used=S.duncanUsed?"已免疫1次":"免疫待命（1次）";
+  else if(st.key==="alexander"){ const f=Object.values(S.foul).reduce((a,b)=>a+b,0); used=`犯规累计 ${f} · 抽取${Object.keys(S.drawn).length}次`; }
+  else if(st.key==="jordan") used=S.wildId!=null?`万能牌已指定`:"未指定";
+  else if(st.key==="kidd") used="视野常驻";
+  else if(st.key==="nowitzki") used=`累计对子 ${S.pairs} · 已弃 ${S.discarded}`;
+  else if(st.key==="brunson") used="残局+1级常驻";
+  else if(st.key==="kobe") used="终局最大常驻";
+  el.textContent=`技能：${st.skill}（${used}）`;
+}
+function renderHands(){
+  [1,2].forEach(s=>{
+    const seat=document.getElementById("seat"+s);
+    let ph=seat.querySelector(".ph");
+    if(!ph){ph=document.createElement("div");ph.className="ph";ph.style.cssText="display:flex;gap:2px;margin-top:4px;flex-wrap:wrap";seat.appendChild(ph);}
+    ph.innerHTML="";
+    const n=G.players[s].hand.length;
+    for(let i=0;i<n;i++){const k=document.createElement("div");k.style.cssText="width:14px;height:20px;border-radius:3px;background:linear-gradient(180deg,#2f6df0,#1b3a7a);border:1px solid rgba(255,255,255,.3)";ph.appendChild(k);}
+  });
+  renderHand();
+}
+/* v0.7.2 牌面：直接使用样品图片(54张完整牌组 Art Deco 风格) */
+const SUIT_NAME={'♠':'spade','♥':'heart','♣':'club','♦':'diamond'};
+const V_RANK={3:'3',4:'4',5:'5',6:'6',7:'7',8:'8',9:'9',10:'10',11:'J',12:'Q',13:'K',14:'A',15:'2'};
+function cardImageURL(c){
+  if(c.v===17) return 'sample_cards/joker_big.jpg';
+  if(c.v===16) return 'sample_cards/joker_small.jpg';
+  const prefix=SUIT_NAME[c.s];
+  const rank=V_RANK[c.v]||c.label;
+  return `sample_cards/${prefix}_${rank}.jpg`;
+}
+function cardHTML(c){
+  return `<img src="${cardImageURL(c)}" alt="${c.s}${c.label}" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:6px">`;
+}
+function renderHand(){
+  const h=document.getElementById("hand");h.innerHTML="";
+  const dMode=!!G.durantSelect;
+  G.players[0].hand.forEach(c=>{
+    const el=document.createElement("div");
+    const canPick=!dMode || (c.v>=11 && c.v<=15);
+    el.className="card"+(c.red?" red":"")+(selected.has(c.id)?" sel":"")+(dMode && !canPick?" dim":"");
+    el.innerHTML=cardHTML(c);
+    el.onclick=()=>{if(G.phase!=="play"||G.turn!==0)return;
+      if(dMode){ if(canPick) doDurantDiscard(c); return; }
+      if(selected.has(c.id))selected.delete(c.id);else selected.add(c.id); renderHand(); updatePlayBtn();};
+    if(dMode && !canPick){ el.style.opacity=".3"; el.style.cursor="not-allowed"; }
+    h.appendChild(el);
+  });
+}
+function renderCounts(){[0,1,2].forEach(s=>document.getElementById("cnt"+s).textContent=G.players[s].hand.length);}
+function renderLast(){
+  const el=document.getElementById("lastMove");el.innerHTML="";
+  if(G.lastMove){G.lastMove.cards.forEach(c=>{
+    const k=document.createElement("div");k.className="card"+(c.red?" red":"")+(c.phantom?" phantom":"");
+    k.style.cursor="default";
+    k.innerHTML=cardHTML(c);
+    el.appendChild(k);
+  });}
+}
+function renderMult(){document.getElementById("multTxt").textContent="倍数 ×"+G.mult;}
+function renderClock(){const m=Math.floor(G.elapsed/60),s=G.elapsed%60;document.getElementById("clockTxt").textContent="本局 "+m+":"+(s<10?"0":"")+s;}
+
+/* ---- 叫抢控制 ---- */
+function renderControls_bid(){
+  const c=document.getElementById("controls");c.innerHTML="";
+  const max=G.bidMax;
+  const opts=[{t:"不叫",v:0},{t:"1分",v:1},{t:"2分",v:2},{t:"3分",v:3}];
+  opts.forEach(o=>{
+    const b=document.createElement("button");b.className="btn"+(o.v>0?" primary":"");b.textContent=o.t;
+    b.disabled=(o.v>0 && o.v<=max);   // 不叫(v=0) 永远可选；只能叫比当前更高的分
+    b.onclick=()=>{ clearTimers(); doBid(0,o.v); };
+    c.appendChild(b);
+  });
+}
+
+/* ============ Phase 6 计时遥测（localStorage 捕获，部署后真实数据自动累积） ============ */
+const TELE_KEY="nba_poker_telemetry_v1", TELE_CAP=200;
+function loadTelemetry(){ try{ return JSON.parse(localStorage.getItem(TELE_KEY)||"[]"); }catch(e){ return []; } }
+function saveTelemetry(rec){ try{ const a=loadTelemetry(); a.push(rec); if(a.length>TELE_CAP) a.splice(0,a.length-TELE_CAP); localStorage.setItem(TELE_KEY, JSON.stringify(a)); }catch(e){} }
+function recordTelemetry(rec){ saveTelemetry(rec); }
+function fmtDur(s){ const m=Math.floor(s/60); return m+":"+String(s%60).padStart(2,"0"); }
+function showTelemetry(){
+  const t=document.getElementById("tele"); t.classList.toggle("on");
+  if(!t.classList.contains("on")) return;
+  const a=loadTelemetry();
+  document.getElementById("tN").textContent=a.length;
+  if(!a.length) return;
+  const dur=a.map(r=>r.elapsed);
+  const avg=dur.reduce((x,y)=>x+y,0)/dur.length;
+  const med=dur.slice().sort((x,y)=>x-y)[Math.floor(dur.length/2)];
+  const max=dur.reduce((x,y)=>Math.max(x,y),0);
+  const hAvg=a.reduce((x,r)=>x+r.humanTurns,0)/a.length;
+  const aAvg=a.reduce((x,r)=>x+r.aiTurns,0)/a.length;
+  document.getElementById("tAvg").textContent=fmtDur(Math.round(avg));
+  document.getElementById("tMed").textContent=fmtDur(Math.round(med));
+  document.getElementById("tMax").textContent=fmtDur(max);
+  document.getElementById("tHuman").textContent=hAvg.toFixed(1);
+  document.getElementById("tAi").textContent=aAvg.toFixed(1);
+  document.getElementById("tJson").value=JSON.stringify(a,null,2);
+}
+function copyTelemetry(){
+  const ta=document.getElementById("tJson");
+  if(!ta.value){ alert("暂无遥测数据，先玩几局再复制。"); return; }
+  ta.focus(); ta.select();
+  try{ document.execCommand("copy"); alert("已复制 "+loadTelemetry().length+" 局遥测 JSON，直接粘贴给我即可。"); }
+  catch(e){ alert("复制失败，请手动 Ctrl/⌘+C 复制文本框内容。"); }
+}
+function exportTelemetry(){
+  const a=loadTelemetry(); const blob=new Blob([JSON.stringify(a,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob); const fn=document.createElement("a");
+  fn.href=url; fn.download="nba_poker_telemetry_"+Date.now()+".json"; fn.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function clearTelemetry(){ try{ localStorage.removeItem(TELE_KEY); }catch(e){} showTelemetry(); }
+
+/* ============ 绑定 ============ */
+document.getElementById("minBtn").onclick=()=>{
+  const o=document.getElementById("overlay");
+  document.getElementById("ovTitle").textContent="最小化";
+  document.getElementById("ovHl").style.display="none";
+  document.getElementById("ovSub").textContent="已回到比赛画面 · 点此回到游戏";
+  o.classList.add("on");
+};
+document.getElementById("teleBtn").onclick=showTelemetry;
+document.getElementById("tCopy").onclick=copyTelemetry;
+document.getElementById("tExport").onclick=exportTelemetry;
+document.getElementById("tClear").onclick=clearTelemetry;
+document.getElementById("overlay").onclick=()=>{
+  if(G.phase==="over"){document.getElementById("overlay").classList.remove("on");newGame();}
+  else document.getElementById("overlay").classList.remove("on");
+};
+window.addEventListener("DOMContentLoaded",()=>{ newGame(); });
+</script>
+</body>
+</html>
