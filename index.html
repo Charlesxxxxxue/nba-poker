@@ -29,6 +29,7 @@
   .seat{flex:1;border:1px solid var(--line);border-radius:10px;padding:7px;background:rgba(10,16,30,.6);min-height:58px;position:relative}
   .seat.active{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset,0 0 14px rgba(255,206,92,.25)}
   .seat .nm{font-size:12px;font-weight:700;display:flex;align-items:center;gap:4px}
+  .seat .nm .seatAv{width:28px;height:28px;border-radius:50%;object-fit:cover;border:1.5px solid var(--gold);flex-shrink:0}
   .seat .tag{font-size:10px;color:var(--ink);background:var(--gold);border-radius:6px;padding:1px 6px;font-weight:700}
   .seat .cnt{position:absolute;right:6px;top:6px;font-family:oswald,teko,sans-serif;font-size:18px;color:var(--gold)}
   .seat .bubble{margin-top:4px;font-size:11px;color:var(--dim);min-height:14px}
@@ -52,8 +53,11 @@
   .card .s{position:absolute;top:28px;left:6px;font-size:20px;color:#2c314d}
   .card .sc{position:absolute;bottom:4px;right:5px;font-size:26px;color:#2c314d}
   .card.red .r,.card.red .s,.card.red .sc{color:#e23a4e}
-  /* Joker 牌：扑克牌小丑(jester)画像，靠颜色区分——大王红(#d4202a)、小王黑(#1c1c24) */
-  .card .jokerArt{position:absolute;top:3px;left:3px;width:calc(100% - 6px);height:calc(100% - 6px)}
+  /* v0.7.3 纯文字渲染：大王/小王居中文字；幻影牌居中点数（尺寸由下方 .r/.s/.sc 控制，改字号即生效） */
+  .card .jk{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;line-height:1.05;color:#1c1c24;text-align:center}
+  .card.red .jk{color:#e23a4e}
+  .card .r2{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#1a1d2e}
+  .card.red .r2{color:#e23a4e}
   /* 底牌暗牌（牌背）：叫完地主前不明示 */
   .card.back{background:linear-gradient(145deg,#2f6df0 0%,#1b3a7a 100%);border-color:rgba(255,255,255,.35);cursor:default;
     background-image:repeating-linear-gradient(45deg, rgba(255,255,255,.08) 0 4px, transparent 4px 8px),linear-gradient(145deg,#2f6df0 0%,#1b3a7a 100%)}
@@ -64,6 +68,7 @@
   .btn.primary{background:linear-gradient(180deg,var(--gold),var(--gold2));color:#1a1300;border:none}
   .btn.go{background:linear-gradient(180deg,#2f6df0,#1b3a7a);color:#fff;border:none}
   .btn.starPick{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:150px;padding:12px 8px;font-size:14px}
+  .starPick .spImg{width:120px;height:auto;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.5);margin-bottom:4px}
   .btn.starPick b{font-family:oswald,teko,sans-serif;font-size:18px;color:var(--gold)}
   .starPick .spName{font-size:15px}
   .starPick .spSkill{font-size:14px;color:var(--gold2);font-weight:700}
@@ -78,6 +83,8 @@
   .overlay{position:absolute;inset:0;background:rgba(4,8,16,.9);display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:20;padding:20px;text-align:center}
   .overlay.on{display:flex}
   .overlay h2{font-family:oswald,teko,sans-serif;font-size:34px;color:var(--gold)}
+  #ovCard{margin:6px 0}
+  .ovCardImg{width:180px;height:auto;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.6);border:2px solid var(--gold)}
   .overlay .hl{font-size:13px;color:var(--gold);margin-top:6px}
   .pill2{font-size:12px;color:var(--dim);max-width:80%}
 
@@ -99,6 +106,7 @@
     .controls{flex-direction:row;flex-wrap:wrap;gap:6px;padding:6px}
     .btn{flex:1 1 calc(50% - 6px);min-width:0;padding:13px 8px;font-size:14px}
     .btn.starPick{flex:1 1 44%;min-width:0;padding:10px 4px}
+    .starPick .spImg{width:80px}
     .log{height:74px}
   }
   /* ===== 超窄屏（≤360px）进一步收紧 ===== */
@@ -120,7 +128,8 @@
   .bottom .card .r{font-size:20px;top:2px;left:3px}
   .bottom .card .s{font-size:17px;top:21px;left:4px}
   .bottom .card .sc{font-size:19px;bottom:2px;right:3px}
-  .bottom .card .jokerArt{top:1px;left:1px;width:calc(100% - 2px);height:calc(100% - 2px)}
+  .bottom .card .jk{font-size:11px}
+  .bottom .card .r2{font-size:15px}
   .bottom .card.back::after{font-size:12px}
   .ovStats{display:none;width:100%;max-width:340px;margin:6px auto 0;font-size:13px;text-align:left;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:10px 12px}
   .ovStats h4{margin:0 0 6px;font-size:13px;color:var(--gold)}
@@ -166,6 +175,7 @@
 
     <div class="overlay" id="overlay">
       <h2 id="ovTitle">最小化</h2>
+      <div id="ovCard" style="display:none"></div>
       <div class="hl" id="ovHl" style="display:none"></div>
       <div class="pill2" id="ovSub">已回到比赛画面 · 点此回到游戏</div>
       <div class="ovStats" id="ovStats"></div>
@@ -240,7 +250,7 @@ const STARS={
   harden:{key:"harden",name:"哈登",skill:"and one",type:"active",cd:"1局1次",desc:"出牌后可随即再打出一次相同牌型"},
   doncic:{key:"doncic",name:"东契奇",skill:"luka magic",type:"passive",cd:"1局1次触发",desc:"打出3种以上牌型后复制一张手中最大牌（不含王）"},
   kobe:{key:"kobe",name:"科比",skill:"曼巴时刻",type:"passive",cd:"常驻",desc:"恰好剩最后一个牌型时视为最大点数直接获胜"},
-  duncan:{key:"duncan",name:"邓肯",skill:"石佛",type:"passive",cd:"免疫1次",desc:"免疫任何针对自己的技能攻击（夺牌/强制弃牌）"},
+  duncan:{key:"duncan",name:"邓肯",skill:"石佛",type:"passive",cd:"免疫（无上限）",desc:"免疫任何针对自己的技能攻击（夺牌/强制弃牌），无次数上限"},
   oNeal:{key:"oNeal",name:"奥尼尔",skill:"制霸篮下",type:"active",cd:"1局1次",desc:"非王炸炸弹可升为最高级（等同王炸，不可被压）"},
   kidd:{key:"kidd",name:"基德",skill:"球场视野",type:"passive",cd:"常驻",desc:"叫分前看底牌；若地主可在加倍后分配3张底牌"},
   nowitzki:{key:"nowitzki",name:"诺维斯基",skill:"金鸡独立",type:"passive",cd:"常驻(每累计2对触发)",desc:"本局累计打出两个对子后弃一张手牌加速清牌"},
@@ -248,6 +258,24 @@ const STARS={
   lebron:{key:"lebron",name:"詹姆斯",skill:"加冕",type:"active",cd:"1局1次",desc:"截下一张无人能压的单牌并领出"},
   jordan:{key:"jordan",name:"乔丹",skill:"神之一手",type:"active",cd:"每局指定1张",desc:"开局指定1张万能牌（可变2–A任意牌，不可当王）"}
 };
+/* 球星卡面图片路径（炉石风竖版肖像，15 张全量） */
+const STAR_IMG={
+  jokic:"star_cards/A_jokic_hearthstone.png",
+  wembanyama:"star_cards/A_wembanyama_hearthstone.png",
+  alexander:"star_cards/A_alexander_hearthstone.png",
+  brunson:"star_cards/A_brunson_hearthstone.png",
+  durant:"star_cards/A_durant_hearthstone.png",
+  harden:"star_cards/A_harden_hearthstone.png",
+  doncic:"star_cards/A_doncic_hearthstone.png",
+  kobe:"star_cards/A_kobe_hearthstone.png",
+  duncan:"star_cards/A_duncan_hearthstone.png",
+  oNeal:"star_cards/A_oNeal_hearthstone.png",
+  kidd:"star_cards/A_kidd_hearthstone.png",
+  nowitzki:"star_cards/A_nowitzki_hearthstone.png",
+  curry:"star_cards/A_curry_hearthstone.png",
+  lebron:"star_cards/A_lebron_hearthstone.png",
+  jordan:"star_cards/A_jordan_hearthstone.png"
+};;
 
 /* ============ NUMBRA 数值配置（Phase 4 回填，N1-N5） ============ */
 const NUMBRA={
@@ -614,7 +642,8 @@ function renderPickStar(){
   cand.forEach(k=>{
     const st=STARS[k];
     const b=document.createElement("button");b.className="btn starPick";
-    b.innerHTML=`<div class="spName">🏀 <b>${st.name}</b></div><div class="spSkill">${st.skill}</div><div class="spType">${typeTxt(st)}</div>`;
+    const img=STAR_IMG[k]?`<img src="${STAR_IMG[k]}" class="spImg" alt="${st.name}" loading="lazy">`:'';
+    b.innerHTML=`${img}<div class="spName"><b>${st.name}</b></div><div class="spSkill">${st.skill}</div><div class="spType">${typeTxt(st)}</div>`;
     b.onclick=()=>pickStar(k);
     b.onmouseenter=(e)=>showTip(st);
     b.onmousemove=(e)=>moveTip(e);
@@ -627,16 +656,24 @@ function ensureTip(){ let t=document.getElementById("skillTip"); if(!t){ t=docum
 function showTip(st){ const t=ensureTip(); t.innerHTML=`<b>${st.name} · ${st.skill}</b><div class="tipType">${st.type==='active'?'主动技能':(st.type==='reactive'?'反应技能':(st.type==='passive+active'?'被动+主动':'被动技能'))} · ${st.cd||''}</div><div class="tipDesc">${st.desc}</div>`; t.style.display="block"; }
 function moveTip(e){ const t=ensureTip(); const w=t.offsetWidth||260; let x=e.clientX+14; if(x+w>window.innerWidth-10) x=e.clientX-w-14; t.style.left=x+"px"; t.style.top=(e.clientY+14)+"px"; }
 function hideTip(){ const t=document.getElementById("skillTip"); if(t) t.style.display="none"; }
+function aiPickFromPool(){
+  // 与人类一致的"3 选 1"：先从全体 15 星随机抽 3 名候选，再随机选 1 名
+  const keysAll=Object.keys(STARS);
+  const pool=[]; while(pool.length<3){ const k=keysAll[Math.floor(Math.random()*keysAll.length)]; if(!pool.includes(k)) pool.push(k); }
+  return pool[Math.floor(Math.random()*3)];
+}
 function pickStar(k){
   hideTip();                                  // 选英雄后关闭技能说明浮窗
   G.skillStar=k; G.star[0]=k;
   const st=STARS[k];
-  // AI 两座随机抽星（与人类同池），初始化各座技能状态
-  const keys=Object.keys(STARS);
-  G.star[1]=keys[Math.floor(Math.random()*keys.length)];
-  G.star[2]=keys[Math.floor(Math.random()*keys.length)];
+  // AI 两座：各自从全体 15 星随机抽 3 名候选，再随机选 1（与人类一致的"3 选 1"），确保三人均持技能
+  G.star[1]=aiPickFromPool();
+  G.star[2]=aiPickFromPool();
   G.ss=[freshSS(),freshSS(),freshSS()];
-  document.getElementById("seat0").querySelector(".nm").innerHTML=`🧑 你（${st.name}） <span class="tag" id="tag0" style="display:none">地主</span>`;
+  const av=(key)=>STAR_IMG[key]?`<img src="${STAR_IMG[key]}" class="seatAv" alt="${STARS[key].name}">`:'';
+  document.getElementById("seat0").querySelector(".nm").innerHTML=`${av(k)}🧑 你（${st.name}） <span class="tag" id="tag0" style="display:none">地主</span>`;
+  document.getElementById("seat1").querySelector(".nm").innerHTML=`${av(G.star[1])}🤖 AI 对手 ①（${STARS[G.star[1]].name}） <span class="tag" id="tag1" style="display:none">地主</span>`;
+  document.getElementById("seat2").querySelector(".nm").innerHTML=`${av(G.star[2])}🤖 AI 对手 ②（${STARS[G.star[2]].name}） <span class="tag" id="tag2" style="display:none">地主</span>`;
   const tl = st.type==='active' ? '主动' : (st.type==='reactive' ? '反应' : (st.type==='passive+active' ? '被动+主动' : '被动'));
   log(`你选择了 ${st.name} · ${st.skill}（${tl}）｜AI：${STARS[G.star[1]].name} / ${STARS[G.star[2]].name}`);
   startDeal();
@@ -770,7 +807,7 @@ var SKILLS_OFF=false;
 function freshSS(){ return { used:{}, foul:{}, drawn:{}, types:new Set(), pairs:0, discarded:0,
   jokicUsed:false, curryUsed:0, hardenUsed:false, lebronUsed:false, wembyUsed:false,
   oNealUsed:false, durantUsed:false, retakeReady:false, _lastHadMax:false,
-  doncicUsed:false, duncanUsed:false, wildId:null, kiddSeen:false }; }
+  doncicUsed:false, wildId:null, kiddSeen:false }; }
 function oppAll(s){ return [0,1,2].filter(x=>x!==s); }
 function isFoe(a,b){ return (a===G.landlord)?(b!==G.landlord):(b===G.landlord); }
 function maxCardOf(h){ return h.length? h.slice().sort((x,y)=>y.v-x.v)[0]:null; }
@@ -1153,6 +1190,11 @@ function endGame(winner){
   const m=Math.floor(G.elapsed/60),s=G.elapsed%60;
   recordTelemetry({elapsed:G.elapsed, humanTurns:G.humanTurns, aiTurns:G.aiTurns, moves:G.moveCount, winner, landlordWin, mult:G.mult, skill:G.skillStar, skillUsed:G.skillUsed, bombPlayed:G.bombPlayed, date:new Date().toISOString()});
   document.getElementById("ovTitle").textContent=(winner===0? "🏆 你赢了":"😖 本局结束");
+  // 胜者球星卡
+  const winStar=G.star[winner];
+  const ovCard=document.getElementById("ovCard");
+  if(winStar && STAR_IMG[winStar]){ ovCard.style.display="block"; ovCard.innerHTML=`<img src="${STAR_IMG[winStar]}" class="ovCardImg" alt="${STARS[winStar].name}">`; }
+  else { ovCard.style.display="none"; }
   const hlEl=document.getElementById("ovHl");
   if(hl.length){ hlEl.style.display="block"; hlEl.textContent="✨ 高光：" + hl.join(" · "); } else hlEl.style.display="none";
   document.getElementById("ovSub").textContent=`${title} · 最终倍数 ×${G.mult} · 胜者：${G.players[winner].name} · 本局 ${m}:${s<10?"0":""}${s}`;
@@ -1194,7 +1236,7 @@ function renderSkillStatus(){
   else if(st.key==="durant"||st.key==="harden"||st.key==="oNeal"||st.key==="jokic"||st.key==="wembanyama") used=S[st.key+"Used"]?"已用 · 一局一次":"可用 · 一局一次";
   else if(st.key==="lebron") used=S.lebronUsed?"已用 · 一局一次":"可用 · 一局一次";
   else if(st.key==="doncic") used=S.doncicUsed?"已触发":"待命（打出3+牌型触发）";
-  else if(st.key==="duncan") used=S.duncanUsed?"已免疫1次":"免疫待命（1次）";
+  else if(st.key==="duncan") used="免疫（无上限）";
   else if(st.key==="alexander"){ const f=Object.values(S.foul).reduce((a,b)=>a+b,0); used=`犯规累计 ${f} · 抽取${Object.keys(S.drawn).length}次`; }
   else if(st.key==="jordan") used=S.wildId!=null?`万能牌已指定`:"未指定";
   else if(st.key==="kidd") used="视野常驻";
@@ -1214,7 +1256,7 @@ function renderHands(){
   });
   renderHand();
 }
-/* v0.7.2 牌面：直接使用样品图片(54张完整牌组 Art Deco 风格) */
+/* v0.7.3 牌面：纯文字渲染（点数+花色符号），不再依赖 sample_cards 龙纹图片 */
 const SUIT_NAME={'♠':'spade','♥':'heart','♣':'club','♦':'diamond'};
 const V_RANK={3:'3',4:'4',5:'5',6:'6',7:'7',8:'8',9:'9',10:'10',11:'J',12:'Q',13:'K',14:'A',15:'2'};
 function cardImageURL(c){
@@ -1225,7 +1267,12 @@ function cardImageURL(c){
   return `sample_cards/${prefix}_${rank}.jpg`;
 }
 function cardHTML(c){
-  return `<img src="${cardImageURL(c)}" alt="${c.s}${c.label}" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:6px">`;
+  // v0.7.3 牌面：纯文字渲染（点数 .r + 花色角标 .s + 花色大标 .sc），字号改 CSS 即生效，不再依赖龙纹图片
+  if(c.v===17) return `<div class="jk">大王</div>`;
+  if(c.v===16) return `<div class="jk">小王</div>`;
+  const suit=c.s||"";
+  if(!suit) return `<div class="r2">${c.label}</div>`;   // 幻影牌（无花色）居中显示点数
+  return `<div class="r">${c.label}</div><div class="s">${suit}</div><div class="sc">${suit}</div>`;
 }
 function renderHand(){
   const h=document.getElementById("hand");h.innerHTML="";
