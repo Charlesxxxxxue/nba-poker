@@ -1,0 +1,215 @@
+/* ============================================================================
+ * NBA Poker · rules.js  ——  纯规则模块（双端复用：浏览器 + Node 服务器）
+ *
+ * 设计目标：
+ *  - 浏览器：挂到 window（含 window.NBAPokerRules 命名空间），供 PLAYABLE 引擎引用，
+ *    引擎不再内联这些规则，避免「单文件副本」与「服务端副本」漂移。
+ *  - Node：module.exports，供 PvP 权威服务器校验每一手（防作弊）。
+ *
+ * 仅含「无副作用、不依赖全局 G / DOM」的纯函数与常量。
+ * 依赖全局状态的座位级封装（genAllForSeat / genBeatingForSeat / isFoe / isTopRemaining
+ * 等）仍保留在引擎内，它们调用本模块暴露的纯函数。
+ * ==========================================================================*/
+(function (root, factory) {
+  const R = factory();
+  if (typeof module === 'object' && module.exports) {
+    module.exports = R;
+  } else {
+    root.NBAPokerRules = R;
+    // 把每个导出直接挂到 window，使引擎内对 parseMove / genBeating 等的裸引用生效
+    Object.assign(root, R);
+  }
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  /* ---------- 常量 ---------- */
+  const SUITS = ["♠", "♥", "♣", "♦"];
+  const RED = { "♥": 1, "♦": 1 };
+  const SUIT_ORDER = { "♠": 3, "♥": 2, "♣": 1, "♦": 0 };
+  const LABEL = { 3: "3", 4: "4", 5: "5", 6: "6", 7: "7", 8: "8", 9: "9", 10: "10", 11: "J", 12: "Q", 13: "K", 14: "A", 15: "2", 16: "小王", 17: "大王" };
+  const V_RANK = { 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: '8', 9: '9', 10: '10', 11: 'J', 12: 'Q', 13: 'K', 14: 'A', 15: '2' };
+  const SUIT_NAME = { '♠': 'spade', '♥': 'heart', '♣': 'club', '♦': 'diamond' };
+  const JORDAN_WILDS = 1;   // 乔丹·神之一手：开局主动指定的万能牌数量（1=原始设计/已验证基线）
+
+  const STARS = {
+    jokic: { key: "jokic", name: "约基奇", skill: "移花接木", type: "active", cd: "1局1次", desc: "出牌阶段与任意一名其他玩家互换一张手牌（对手排序打乱呈现）" },
+    wembanyama: { key: "wembanyama", name: "文班亚马", skill: "遮天蔽日", type: "reactive", cd: "1局1次", desc: "对手打出炸弹时抵消其效果（王炸不可抵消）" },
+    alexander: { key: "alexander", name: "亚历山大", skill: "造犯规", type: "passive+active", cd: "被动常驻；主动每对手1次", desc: "被压牌→压人者+1犯规；犯规达4可抽取其1张手牌（打乱，可选留/弃）" },
+    brunson: { key: "brunson", name: "布伦森", skill: "大心脏", type: "passive", cd: "常驻", desc: "手牌≤5张时点数默认+1级（K→A、A→2、2→王级）" },
+    durant: { key: "durant", name: "杜兰特", skill: "死神降临", type: "active", cd: "1局1次", desc: "打出含手中最大牌的牌型被压时，可弃一张大于10的牌（J/Q/K/A/2）重夺出牌权" },
+    harden: { key: "harden", name: "哈登", skill: "and one", type: "active", cd: "1局1次", desc: "出牌后可随即再打出一次相同牌型" },
+    doncic: { key: "doncic", name: "东契奇", skill: "luka magic", type: "passive", cd: "1局1次触发", desc: "打出3种以上牌型后复制一张手中最大牌（不含王）" },
+    kobe: { key: "kobe", name: "科比", skill: "曼巴时刻", type: "passive", cd: "常驻", desc: "恰好剩最后一个牌型时视为最大点数直接获胜" },
+    duncan: { key: "duncan", name: "邓肯", skill: "石佛", type: "passive", cd: "免疫（无上限）", desc: "免疫任何针对自己的技能攻击（夺牌/强制弃牌），无次数上限" },
+    oNeal: { key: "oNeal", name: "奥尼尔", skill: "制霸篮下", type: "active", cd: "1局1次", desc: "非王炸炸弹可升为最高级（等同王炸，不可被压）" },
+    kidd: { key: "kidd", name: "基德", skill: "球场视野", type: "passive", cd: "常驻", desc: "叫分前看底牌；若地主可在加倍后分配3张底牌" },
+    nowitzki: { key: "nowitzki", name: "诺维斯基", skill: "金鸡独立", type: "passive", cd: "常驻(每累计2对触发)", desc: "本局累计打出两个对子后弃一张手牌加速清牌" },
+    curry: { key: "curry", name: "库里", skill: "百步穿杨", type: "active", cd: "1局2次", desc: "对子当作三张打出（重组三连）" },
+    lebron: { key: "lebron", name: "詹姆斯", skill: "加冕", type: "active", cd: "1局1次", desc: "截下一张无人能压的单牌并领出" },
+    jordan: { key: "jordan", name: "乔丹", skill: "神之一手", type: "active", cd: "每局指定" + JORDAN_WILDS + "张", desc: "开局主动指定" + JORDAN_WILDS + "张手牌为万能牌（可变2–A任意牌，不可当王）" }
+  };
+  const STAR_IMG = {
+    jokic: "star_cards/A_jokic_hearthstone.png", wembanyama: "star_cards/A_wembanyama_hearthstone.png",
+    alexander: "star_cards/A_alexander_hearthstone.png", brunson: "star_cards/A_brunson_hearthstone.png",
+    durant: "star_cards/A_durant_hearthstone.png", harden: "star_cards/A_harden_hearthstone.png",
+    doncic: "star_cards/A_doncic_hearthstone.png", kobe: "star_cards/A_kobe_hearthstone.png",
+    duncan: "star_cards/A_duncan_hearthstone.png", oNeal: "star_cards/A_oNeal_hearthstone.png",
+    kidd: "star_cards/A_kidd_hearthstone.png", nowitzki: "star_cards/A_nowitzki_hearthstone.png",
+    curry: "star_cards/A_curry_hearthstone.png", lebron: "star_cards/A_lebron_hearthstone.png",
+    jordan: "star_cards/A_jordan_hearthstone.png"
+  };
+
+  /* ---------- 牌组 ---------- */
+  let CARD_SEQ = 0;
+  function buildDeck() {
+    const d = [];
+    for (let v = 3; v <= 15; v++) for (const s of SUITS) d.push({ id: ++CARD_SEQ, v, s, red: !!RED[s], label: LABEL[v] });
+    d.push({ id: ++CARD_SEQ, v: 16, s: "", red: false, label: "小王" });
+    d.push({ id: ++CARD_SEQ, v: 17, s: "", red: true, label: "大王" });
+    return d;
+  }
+  function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+  function sortHand(h) { h.sort((a, b) => b.v - a.v || ((SUIT_ORDER[b.s] ?? -1) - (SUIT_ORDER[a.s] ?? -1))); }
+  function groupByVal(hand) { const g = {}; hand.forEach(c => (g[c.v] = g[c.v] || []).push(c)); return g; }
+  function anyBomb(hand) { const g = groupByVal(hand); return (g[16] && g[17]) || Object.values(g).some(a => a.length === 4); }
+
+  /* ---------- 走法解析 / 比较 ---------- */
+  function isConsec(arr) { for (let i = 1; i < arr.length; i++) if (arr[i] !== arr[i - 1] + 1) return false; return true; }
+  function findConsecRun(sorted, m) {
+    for (let i = 0; i + m - 1 < sorted.length; i++) {
+      let ok = true; for (let j = 0; j < m; j++) if (sorted[i + j] !== sorted[i] + j) { ok = false; break; }
+      if (ok) return sorted.slice(i, i + m);
+    }
+    return null;
+  }
+  function parseMove(cards) {
+    if (!cards || cards.length === 0) return null;
+    const vals = cards.map(c => c.v).sort((a, b) => a - b);
+    const n = vals.length;
+    const counts = {}; vals.forEach(v => counts[v] = (counts[v] || 0) + 1);
+    const ranks = Object.keys(counts).map(Number).sort((a, b) => a - b);
+    if (n === 2 && counts[16] && counts[17]) return { type: "rocket", rank: 100, len: 1, cards };
+    if (n === 4 && ranks.length === 1) return { type: "bomb", rank: ranks[0], len: 1, cards };
+    if (n === 1) return { type: "single", rank: vals[0], len: 1, cards };
+    if (n === 2 && ranks.length === 1) return { type: "pair", rank: ranks[0], len: 1, cards };
+    if (n === 3 && ranks.length === 1) return { type: "triple", rank: ranks[0], len: 1, cards };
+    if (n === 4) { const t = ranks.find(r => counts[r] === 3); if (t !== undefined) return { type: "triple1", rank: t, len: 1, cards }; return null; }
+    if (n === 5) { const t = ranks.find(r => counts[r] === 3), p = ranks.find(r => counts[r] === 2); if (t !== undefined && p !== undefined && t !== p) return { type: "triple2", rank: t, len: 1, cards }; }
+    if (n >= 5 && ranks.length === n && isConsec(ranks) && ranks[ranks.length - 1] <= 14) return { type: "straight", rank: ranks[ranks.length - 1], len: n, cards };
+    if (n >= 6 && n % 2 === 0 && ranks.length === n / 2 && ranks.every(r => counts[r] === 2) && isConsec(ranks) && ranks[ranks.length - 1] <= 14) return { type: "double", rank: ranks[ranks.length - 1], len: n / 2, cards };
+    const tripleRanks = ranks.filter(r => counts[r] >= 3 && r <= 14).sort((a, b) => a - b);
+    if (n % 3 === 0) { const m = n / 3; if (tripleRanks.length === m && isConsec(tripleRanks) && ranks.every(r => counts[r] === 3)) return { type: "airplane", rank: tripleRanks[m - 1], len: m, cards }; }
+    if (n % 4 === 0) { const m = n / 4; const run = findConsecRun(tripleRanks, m); if (run) { const used = {}; run.forEach(r => used[r] = 3); let rem = 0; vals.forEach(v => { if (used[v] > 0) used[v]--; else rem++; }); if (rem === m) return { type: "airplane1", rank: run[m - 1], len: m, cards }; } }
+    if (n % 5 === 0) { const m = n / 5; const run = findConsecRun(tripleRanks, m); if (run) { const used = {}; run.forEach(r => used[r] = 3); const rv = []; vals.forEach(v => { if (used[v] > 0) used[v]--; else rv.push(v); }); if (rv.length === 2 * m) { const rc = {}; rv.forEach(v => rc[v] = (rc[v] || 0) + 1); if (Object.values(rc).every(c => c === 2)) return { type: "airplane2", rank: run[m - 1], len: m, cards }; } } }
+    return null;
+  }
+  function beats(prev, mv) {
+    if (!prev) return true;
+    if (mv.type === "rocket") return true;
+    if (mv.type === "bomb") { if (prev.type === "rocket") return false; if (prev.type === "bomb") return mv.rank > prev.rank; return true; }
+    if (prev.type === "bomb" || prev.type === "rocket") return false;
+    return mv.type === prev.type && mv.len === prev.len && mv.rank > prev.rank;
+  }
+  // 万能牌解析：给定物理牌（含万能牌）与「每张万能牌→代表点数」映射，返回带替点 rank 的走法；cards 仍是原始物理牌引用
+  function parseMoveWithWild(cards, wildMap) {
+    if (!cards || !cards.length) return null;
+    const tmp = cards.map(c => (wildMap[c.id] !== undefined) ? { ...c, v: wildMap[c.id] } : c);
+    const mv = parseMove(tmp);
+    if (!mv) return null;
+    mv.cards = mv.cards.map(mc => cards.find(x => x.id === mc.id));
+    return mv;
+  }
+
+  /* ---------- 走子生成（纯函数，不读 G） ---------- */
+  function genAllMoves(hand) {
+    const moves = []; const g = groupByVal(hand); const vals = Object.keys(g).map(Number).sort((a, b) => a - b);
+    vals.forEach(v => moves.push({ type: "single", rank: v, len: 1, cards: [g[v][0]] }));
+    vals.forEach(v => { if (g[v].length >= 2) moves.push({ type: "pair", rank: v, len: 1, cards: g[v].slice(0, 2) }); });
+    vals.forEach(v => { if (g[v].length >= 3) {
+      moves.push({ type: "triple", rank: v, len: 1, cards: g[v].slice(0, 3) });
+      const other = vals.find(o => o !== v && g[o].length >= 1); if (other !== undefined) moves.push({ type: "triple1", rank: v, len: 1, cards: g[v].slice(0, 3).concat(g[other][0]) });
+      const op = vals.find(o => o !== v && g[o].length >= 2); if (op !== undefined) moves.push({ type: "triple2", rank: v, len: 1, cards: g[v].slice(0, 3).concat(g[op].slice(0, 2)) });
+    } });
+    vals.forEach(v => { if (g[v].length === 4) moves.push({ type: "bomb", rank: v, len: 1, cards: g[v].slice(0, 4) }); });
+    if (g[16] && g[17]) moves.push({ type: "rocket", rank: 100, len: 1, cards: [g[16][0], g[17][0]] });
+    for (let len = 5; len <= 12; len++) for (let s = 3; s + len - 1 <= 14; s++) {
+      let ok = true; const cs = []; for (let k = 0; k < len; k++) { if (!g[s + k]) { ok = false; break; } cs.push(g[s + k][0]); }
+      if (ok) moves.push({ type: "straight", rank: s + len - 1, len, cards: cs });
+    }
+    for (let len = 3; len <= 10; len++) for (let s = 3; s + len - 1 <= 14; s++) {
+      let ok = true; const cs = []; for (let k = 0; k < len; k++) { if (!g[s + k] || g[s + k].length < 2) { ok = false; break; } cs.push(g[s + k][0], g[s + k][1]); }
+      if (ok) moves.push({ type: "double", rank: s + len - 1, len, cards: cs });
+    }
+    return moves;
+  }
+  function genBeating(hand, prev) {
+    if (prev.type === "rocket") return [];
+    const out = []; const g = groupByVal(hand); const vals = Object.keys(g).map(Number).sort((a, b) => a - b);
+    if (prev.type === "single") { vals.forEach(v => { if (v > prev.rank) out.push({ type: "single", rank: v, len: 1, cards: [g[v][0]] }); }); }
+    else if (prev.type === "pair") { vals.forEach(v => { if (v > prev.rank && g[v].length >= 2) out.push({ type: "pair", rank: v, len: 1, cards: g[v].slice(0, 2) }); }); }
+    else if (prev.type === "triple") { vals.forEach(v => { if (v > prev.rank && g[v].length >= 3) out.push({ type: "triple", rank: v, len: 1, cards: g[v].slice(0, 3) }); }); }
+    else if (prev.type === "triple1") { vals.forEach(v => { if (v > prev.rank && g[v].length >= 3) { const o = vals.find(x => x !== v && g[x].length >= 1); if (o !== undefined) out.push({ type: "triple1", rank: v, len: 1, cards: g[v].slice(0, 3).concat(g[o][0]) }); } }); }
+    else if (prev.type === "triple2") { vals.forEach(v => { if (v > prev.rank && g[v].length >= 3) { const o = vals.find(x => x !== v && g[x].length >= 2); if (o !== undefined) out.push({ type: "triple2", rank: v, len: 1, cards: g[v].slice(0, 3).concat(g[o].slice(0, 2)) }); } }); }
+    else if (prev.type === "straight") { for (let s = 3; s + prev.len - 1 <= 14; s++) { if (s + prev.len - 1 <= prev.rank) continue; let ok = true; const cs = []; for (let k = 0; k < prev.len; k++) { if (!g[s + k]) { ok = false; break; } cs.push(g[s + k][0]); } if (ok) out.push({ type: "straight", rank: s + prev.len - 1, len: prev.len, cards: cs }); } }
+    else if (prev.type === "double") { for (let s = 3; s + prev.len - 1 <= 14; s++) { if (s + prev.len - 1 <= prev.rank) continue; let ok = true; const cs = []; for (let k = 0; k < prev.len; k++) { if (!g[s + k] || g[s + k].length < 2) { ok = false; break; } cs.push(g[s + k][0], g[s + k][1]); } if (ok) out.push({ type: "double", rank: s + prev.len - 1, len: prev.len, cards: cs }); } }
+    else if (prev.type === "airplane" || prev.type === "airplane1" || prev.type === "airplane2") { /* AI 简化：略过飞机跟牌 */ }
+    vals.forEach(v => { if (g[v].length === 4) out.push({ type: "bomb", rank: v, len: 1, cards: g[v].slice(0, 4) }); });
+    if (g[16] && g[17]) out.push({ type: "rocket", rank: 100, len: 1, cards: [g[16][0], g[17][0]] });
+    return out;
+  }
+
+  /* ---------- 评估 / 工具 ---------- */
+  function handStrength(hand) {
+    const g = groupByVal(hand); let s = 0;
+    if (g[17]) s += 6;
+    if (g[16]) s += 3;
+    if (g[15]) s += g[15].length * 2.2;
+    Object.values(g).forEach(a => { if (a.length === 4) s += 5; });
+    [14, 13, 12, 11].forEach(v => { if (g[v]) s += g[v].length * (v - 10) * 0.4; });
+    const vals = Object.keys(g).map(Number).sort((a, b) => a - b);
+    let run = 1, maxrun = 1; for (let i = 1; i < vals.length; i++) { if (vals[i] === vals[i - 1] + 1) { run++; maxrun = Math.max(maxrun, run); } else run = 1; }
+    if (maxrun >= 5) s += (maxrun - 4) * 1.2;
+    return s;
+  }
+  function countBombs(hand) {
+    const g = groupByVal(hand); let n = 0;
+    if (g[16] && g[17]) n++;
+    Object.values(g).forEach(a => { if (a.length === 4) n++; });
+    return n;
+  }
+  function minTricks(hand) {
+    const cnt = {}; hand.forEach(c => { cnt[c.v] = (cnt[c.v] || 0) + 1; });
+    let tricks = 0;
+    if (cnt[16] && cnt[17]) { tricks++; delete cnt[16]; delete cnt[17]; }
+    else { if (cnt[16]) { tricks++; delete cnt[16]; } if (cnt[17]) { tricks++; delete cnt[17]; } }
+    for (const v of Object.keys(cnt)) if (cnt[v] === 4) { tricks++; delete cnt[v]; }
+    let found = true;
+    while (found) { found = false;                       // 顺子 ≥5
+      for (let s = 3; s <= 10; s++) { let len = 0; while (s + len <= 14 && cnt[s + len] > 0) len++;
+        if (len >= 5) { for (let k = 0; k < len; k++) { cnt[s + k]--; if (!cnt[s + k]) delete cnt[s + k]; } tricks++; found = true; break; } } }
+    found = true;
+    while (found) { found = false;                       // 连对 ≥3
+      for (let s = 3; s <= 12; s++) { let len = 0; while (s + len <= 14 && cnt[s + len] >= 2) len++;
+        if (len >= 3) { for (let k = 0; k < len; k++) { cnt[s + k] -= 2; if (!cnt[s + k]) delete cnt[s + k]; } tricks++; found = true; break; } } }
+    let triples = 0, pairs = 0, singles = 0;
+    for (const v of Object.keys(cnt)) {
+      let n = cnt[v];
+      if (n >= 3) { triples++; n -= 3; }
+      if (n === 2) pairs++; else if (n === 1) singles++;
+    }
+    let t = triples;
+    while (t > 0 && (pairs > 0 || singles > 0)) { if (singles > 0) singles--; else pairs--; t--; tricks++; }  // 三带吸收散牌
+    return tricks + t + pairs + singles;
+  }
+  function oppAll(s) { return [0, 1, 2].filter(x => x !== s); }
+  function remapLevel(v) { return v < 15 ? Math.min(16, v + 1) : v; }
+  function pickTwoLowest(h) { return h.slice().sort((a, b) => a.v - b.v).slice(0, Math.min(JORDAN_WILDS, h.length)); }
+
+  return {
+    SUITS, RED, SUIT_ORDER, LABEL, V_RANK, SUIT_NAME, JORDAN_WILDS, STARS, STAR_IMG,
+    buildDeck, shuffle, sortHand, groupByVal, anyBomb,
+    isConsec, findConsecRun, parseMove, beats, parseMoveWithWild,
+    genAllMoves, genBeating, handStrength, countBombs, minTricks,
+    oppAll, remapLevel, pickTwoLowest
+  };
+});
