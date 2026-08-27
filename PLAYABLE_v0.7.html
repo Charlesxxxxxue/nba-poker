@@ -6,79 +6,112 @@
 <title>NBA Poker · 可玩原型 PLAYABLE_v0.7（标准叫分 + AI 协作升级）</title>
 <style>
   :root{
-    --court:#3a2a1c; --court2:#5a3f28; --blue:#2f6df0; --blue2:#1b3a7a;
-    --gold:#ffce5c; --gold2:#ffae3b; --ink:#0d1320; --panel:rgba(14,22,40,.82);
-    --line:rgba(255,255,255,.12); --txt:#eaf0ff; --dim:#9fb0d0;
+    --bg:#04060e; --ambient:radial-gradient(130% 80% at 50% -12%, rgba(10,132,255,.26), transparent 60%);
+    --glass:rgba(255,255,255,.07); --glass-2:rgba(255,255,255,.12); --glass-bd:rgba(255,255,255,.16);
+    --txt:#f5f5f7; --dim:rgba(245,245,247,.62);
+    --accent:#0a84ff; --accent-2:#5ac8fa;
+    --blue:#0a84ff; --blue2:#1b3a7a; --gold:#0a84ff; --gold2:#5ac8fa; --ink:#04121f;
+    --court:#0a1428; --court2:#10203f; --panel:var(--glass); --line:var(--glass-bd);
+    --radius:20px; --radius-sm:13px;
+    --shadow:rgba(0,0,0,.22) 3px 5px 30px 0; --lift:0 18px 50px rgba(0,0,0,.55);
+    --blur:saturate(180%) blur(22px);
+    --font:-apple-system,"SF Pro Display","SF Pro Text",system-ui,"PingFang SC",sans-serif;
   }
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
   html,body{height:100%}
-  body{font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;background:
-    radial-gradient(120% 80% at 50% -10%, #15336b 0%, #0a1428 55%, #060b16 100%);
+  body{font-family:var(--font);background:var(--bg) var(--ambient);
     color:var(--txt);min-height:100vh;display:flex;flex-direction:column;align-items:center;
-    padding:env(safe-area-inset-top) 10px env(safe-area-inset-bottom);touch-action:manipulation}
+    padding:env(safe-area-inset-top) 10px env(safe-area-inset-bottom);touch-action:manipulation;
+    -webkit-font-smoothing:antialiased;letter-spacing:-.2px}
   .topbar{width:100%;max-width:880px;display:flex;justify-content:space-between;align-items:center;gap:8px;
-    padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel);margin-bottom:8px}
-  .topbar b{color:var(--gold);font-family:oswald,teko,sans-serif;letter-spacing:.5px;font-size:15px}
+    padding:9px 14px;border:1px solid var(--glass-bd);border-radius:var(--radius);background:var(--glass);
+    backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.18);margin-bottom:8px}
+  .topbar b{color:var(--accent);font-weight:700;letter-spacing:-.3px;font-size:15px}
   .pill{font-size:11px;color:var(--dim);text-align:right;flex:1}
-  .mini{background:linear-gradient(180deg,#2f6df0,#1b3a7a);border:none;color:#fff;padding:6px 12px;border-radius:8px;cursor:pointer;font-weight:700;flex:none}
-  .stage{width:100%;max-width:880px;flex:1;position:relative;border:1px solid var(--line);border-radius:14px;
-    background:linear-gradient(180deg, rgba(20,40,90,.5), rgba(10,18,34,.9)),
-      repeating-linear-gradient(90deg, rgba(255,255,255,.03) 0 2px, transparent 2px 60px);
-    overflow:hidden;padding:12px;min-height:520px;display:flex;flex-direction:column;gap:8px}
+  .mini{background:var(--glass-2);border:1px solid var(--glass-bd);color:var(--txt);padding:6px 12px;border-radius:980px;cursor:pointer;font-weight:600;flex:none;backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur)}
+  .stage{width:100%;max-width:880px;flex:1;position:relative;border:1px solid var(--glass-bd);border-radius:var(--radius);
+    background:linear-gradient(180deg,rgba(18,30,58,.45),rgba(6,10,20,.85));
+    backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);
+    overflow:hidden;padding:12px;min-height:520px;display:flex;flex-direction:column;gap:8px;
+    box-shadow:var(--lift),inset 0 1px 0 rgba(255,255,255,.10)}
   .seats{display:flex;justify-content:space-between;gap:8px}
-  .seat{flex:1;border:1px solid var(--line);border-radius:10px;padding:7px;background:rgba(10,16,30,.6);min-height:58px;position:relative}
-  .seat.active{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset,0 0 14px rgba(255,206,92,.25)}
+  .seat{flex:1;border:1px solid var(--glass-bd);border-radius:var(--radius-sm);padding:7px;background:var(--glass);
+    backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);min-height:58px;position:relative;
+    box-shadow:var(--shadow);transition:box-shadow .25s,transform .25s}
+  .seat.active{border-color:rgba(10,132,255,.55);box-shadow:0 0 0 1px var(--accent) inset,0 0 18px rgba(10,132,255,.30)}
   .seat .nm{font-size:12px;font-weight:700;display:flex;align-items:center;gap:4px}
-  .seat .tag{font-size:10px;color:var(--ink);background:var(--gold);border-radius:6px;padding:1px 6px;font-weight:700}
-  .seat .cnt{position:absolute;right:6px;top:6px;font-family:oswald,teko,sans-serif;font-size:18px;color:var(--gold)}
+  .seat .nm .seatAv{width:28px;height:28px;border-radius:50%;object-fit:cover;border:1.5px solid var(--accent);flex-shrink:0}
+  .seat .tag{font-size:10px;color:#fff;background:var(--accent);border-radius:7px;padding:1px 6px;font-weight:700}
+  .seat .cnt{position:absolute;right:6px;top:6px;font-size:18px;color:var(--accent);font-weight:600}
   .seat .bubble{margin-top:4px;font-size:11px;color:var(--dim);min-height:14px}
-  .seat .role{font-size:10px;color:var(--blue);font-weight:700}
+  .seat .role{font-size:10px;color:var(--accent-2);font-weight:700}
   .center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:120px}
   .lastmove{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;min-height:46px;align-items:center}
   .phase{font-size:12px;color:var(--dim);text-align:center}
-  .mult{font-family:oswald,teko,sans-serif;color:var(--gold);font-size:15px}
-  .timer{font-family:oswald,teko,sans-serif;font-size:22px;color:var(--gold2)}
-  .clock{font-family:oswald,teko,sans-serif;font-size:13px;color:var(--dim)}
-  .skill{font-size:12px;color:var(--gold);text-align:center;min-height:16px}
+  .mult{color:var(--accent);font-size:15px;font-weight:600}
+  .timer{font-size:22px;color:var(--accent-2);font-weight:600;letter-spacing:-.4px}
+  .clock{font-size:13px;color:var(--dim)}
+  .skill{font-size:12px;color:var(--accent);text-align:center;min-height:16px;font-weight:500}
   /* v0.7：手牌单行重叠展示（成熟斗地主习惯：一行铺开，左上角露点数） */
-  .hand{display:flex;justify-content:center;flex-wrap:nowrap;overflow-x:auto;padding:18px 8px 8px;border:1px solid var(--line);border-radius:10px;background:rgba(10,16,30,.6);min-height:96px;-webkit-overflow-scrolling:touch}
-  .card{width:clamp(38px,11vw,50px);height:clamp(54px,15.5vw,72px);border-radius:7px;background:#f7f8fc;border:1px solid #c9d2e6;position:relative;cursor:pointer;
-    transition:transform .12s;user-select:none;flex:none;box-shadow:-2px 0 5px rgba(0,0,0,.22)}
+  .hand{display:flex;justify-content:center;flex-wrap:nowrap;overflow-x:auto;padding:18px 8px 8px;border:1px solid var(--glass-bd);border-radius:var(--radius-sm);background:var(--glass);
+    backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);min-height:96px;-webkit-overflow-scrolling:touch;box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.10)}
+  .card{width:clamp(38px,11vw,50px);height:clamp(54px,15.5vw,72px);border-radius:8px;background:linear-gradient(180deg,#ffffff,#eef0f5);border:1px solid #c9d2e6;position:relative;cursor:pointer;
+    transition:transform .12s ease,box-shadow .15s ease;user-select:none;flex:none;box-shadow:0 2px 8px rgba(0,0,0,.35)}
   .hand .card{margin-left:-18px}
   .hand .card:first-child{margin-left:0}
-  .card.sel{transform:translateY(-14px);box-shadow:0 0 0 2px var(--gold),0 6px 14px rgba(0,0,0,.5);z-index:2}
-  .card.phantom{border:2px solid var(--gold);background:linear-gradient(180deg,#fff6dc,#ffe6a8);box-shadow:0 0 10px rgba(255,206,92,.5)}
+  .card:hover{transform:translateY(-4px)}
+  .card.sel{transform:translateY(-14px);box-shadow:0 0 0 2px var(--accent),0 6px 14px rgba(0,0,0,.5);z-index:2}
+  .card.phantom{border:2px solid var(--accent);background:linear-gradient(180deg,#e8f3ff,#cfe6ff);box-shadow:0 0 10px rgba(10,132,255,.5)}
+  .card.wild{border:2px solid var(--accent);background:linear-gradient(180deg,#e8f3ff,#cfe6ff);box-shadow:0 0 10px rgba(10,132,255,.5)}
+  .card.wild::after{content:"✷";position:absolute;top:1px;right:3px;font-size:13px;color:#043b6b;font-weight:800;line-height:1}
+  .card.picked{outline:3px solid var(--accent-2);box-shadow:0 0 12px rgba(90,200,250,.75)}
+  /* v0.7.4：乔丹万能牌点数选择器 */
+  .wildPicker{display:none;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center;padding:8px;border:1px solid var(--accent);border-radius:var(--radius-sm);background:rgba(10,132,255,.10);margin-top:6px;backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur)}
+  .wildPicker .wpTitle{width:100%;text-align:center;font-size:12px;color:var(--accent);font-weight:700}
+  .wildPicker .wpRow{display:flex;align-items:center;gap:3px;flex-wrap:wrap;justify-content:center}
+  .wildPicker .wpLabel{font-size:12px;color:var(--txt);margin-right:2px}
+  .wildPicker .wpRank{width:27px;height:27px;border-radius:980px;border:1px solid var(--glass-bd);background:var(--glass-2);color:var(--txt);font-size:12px;cursor:pointer;font-weight:700;padding:0;transition:transform .12s}
+  .wildPicker .wpRank.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .wildPicker .wpRank:active{transform:scale(.9)}
   .card .r{position:absolute;top:3px;left:5px;font-size:24px;font-weight:800;line-height:1;color:#1a1d2e}
   .card .s{position:absolute;top:28px;left:6px;font-size:20px;color:#2c314d}
   .card .sc{position:absolute;bottom:4px;right:5px;font-size:26px;color:#2c314d}
   .card.red .r,.card.red .s,.card.red .sc{color:#e23a4e}
-  /* Joker 牌：扑克牌小丑(jester)画像，靠颜色区分——大王红(#d4202a)、小王黑(#1c1c24) */
-  .card .jokerArt{position:absolute;top:3px;left:3px;width:calc(100% - 6px);height:calc(100% - 6px)}
+  /* v0.7.3 纯文字渲染：大王/小王居中文字；幻影牌居中点数（尺寸由下方 .r/.s/.sc 控制，改字号即生效） */
+  .card .jk{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;line-height:1.05;color:#1c1c24;text-align:center}
+  .card.red .jk{color:#e23a4e}
+  .card .r2{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#1a1d2e}
+  .card.red .r2{color:#e23a4e}
   /* 底牌暗牌（牌背）：叫完地主前不明示 */
   .card.back{background:linear-gradient(145deg,#2f6df0 0%,#1b3a7a 100%);border-color:rgba(255,255,255,.35);cursor:default;
     background-image:repeating-linear-gradient(45deg, rgba(255,255,255,.08) 0 4px, transparent 4px 8px),linear-gradient(145deg,#2f6df0 0%,#1b3a7a 100%)}
   .card.back::after{content:"🏀";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:16px;opacity:.85}
   .controls{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;padding:8px}
-  .btn{border:1px solid var(--line);background:rgba(255,255,255,.08);color:var(--txt);padding:10px 14px;border-radius:9px;cursor:pointer;font-weight:700;font-size:14px;line-height:1.25;min-height:44px;touch-action:manipulation}
+  .btn{border:1px solid var(--glass-bd);background:var(--glass-2);color:var(--txt);padding:11px 18px;border-radius:980px;cursor:pointer;font-weight:600;font-size:14px;line-height:1.25;min-height:44px;touch-action:manipulation;backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);transition:transform .12s,filter .2s}
+  .btn:active{transform:scale(.96)}
   .btn:disabled{opacity:.35;cursor:not-allowed}
-  .btn.primary{background:linear-gradient(180deg,var(--gold),var(--gold2));color:#1a1300;border:none}
-  .btn.go{background:linear-gradient(180deg,#2f6df0,#1b3a7a);color:#fff;border:none}
+  .btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .btn.primary{background:var(--accent);color:#fff;border:none;box-shadow:0 6px 18px rgba(10,132,255,.38)}
+  .btn.go{background:linear-gradient(180deg,var(--accent),var(--blue2));color:#fff;border:none}
   .btn.starPick{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:150px;padding:12px 8px;font-size:14px}
-  .btn.starPick b{font-family:oswald,teko,sans-serif;font-size:18px;color:var(--gold)}
+  .starPick .spImg{width:120px;height:auto;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.5);margin-bottom:4px;border:1px solid var(--glass-bd)}
+  .btn.starPick b{font-size:18px;color:var(--accent);font-weight:700}
   .starPick .spName{font-size:15px}
-  .starPick .spSkill{font-size:14px;color:var(--gold2);font-weight:700}
+  .starPick .spSkill{font-size:14px;color:var(--accent-2);font-weight:700}
   .starPick .spType{font-size:11px;opacity:.75}
   .card.dim{filter:grayscale(.6)}
-  .skillTip{display:none;position:fixed;z-index:999;max-width:280px;background:#10182b;color:#eef2fb;padding:10px 12px;border-radius:10px;font-size:12px;line-height:1.55;box-shadow:0 8px 24px rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.12);pointer-events:none}
-  .skillTip .tipType{margin:4px 0 2px;color:var(--gold);font-weight:700}
+  .skillTip{display:none;position:fixed;z-index:999;max-width:280px;background:rgba(10,16,30,.92);color:#eef2fb;padding:10px 12px;border-radius:14px;font-size:12px;line-height:1.55;box-shadow:0 8px 24px rgba(0,0,0,.45);border:1px solid var(--glass-bd);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);pointer-events:none}
+  .skillTip .tipType{margin:4px 0 2px;color:var(--accent);font-weight:700}
   .skillTip .tipDesc{opacity:.92}
-  .log{width:100%;max-width:880px;height:90px;overflow:auto;border:1px solid var(--line);border-radius:10px;background:rgba(8,12,24,.7);
-    padding:8px;font-size:12px;color:var(--dim);margin-top:8px;line-height:1.5}
-  .log .me{color:var(--gold)}
-  .overlay{position:absolute;inset:0;background:rgba(4,8,16,.9);display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:20;padding:20px;text-align:center}
+  .log{width:100%;max-width:880px;height:90px;overflow:auto;border:1px solid var(--glass-bd);border-radius:var(--radius-sm);background:var(--glass);
+    backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);padding:8px;font-size:12px;color:var(--dim);margin-top:8px;line-height:1.5;box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.10)}
+  .log .me{color:var(--accent)}
+  .overlay{position:absolute;inset:0;background:rgba(4,8,16,.86);display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:20;padding:20px;text-align:center;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
   .overlay.on{display:flex}
-  .overlay h2{font-family:oswald,teko,sans-serif;font-size:34px;color:var(--gold)}
-  .overlay .hl{font-size:13px;color:var(--gold);margin-top:6px}
+  .overlay h2{font-size:34px;color:var(--accent);font-weight:700;letter-spacing:-.5px}
+  #ovCard{margin:6px 0}
+  .ovCardImg{width:180px;height:auto;border-radius:14px;box-shadow:0 4px 20px rgba(0,0,0,.6);border:2px solid var(--accent)}
+  .overlay .hl{font-size:13px;color:var(--accent);margin-top:6px}
   .pill2{font-size:12px;color:var(--dim);max-width:80%}
 
   /* ===== 移动端适配（≤520px 手机竖屏）===== */
@@ -99,6 +132,7 @@
     .controls{flex-direction:row;flex-wrap:wrap;gap:6px;padding:6px}
     .btn{flex:1 1 calc(50% - 6px);min-width:0;padding:13px 8px;font-size:14px}
     .btn.starPick{flex:1 1 44%;min-width:0;padding:10px 4px}
+    .starPick .spImg{width:80px}
     .log{height:74px}
   }
   /* ===== 超窄屏（≤360px）进一步收紧 ===== */
@@ -107,10 +141,10 @@
   }
   /* ===== Phase 6 计时遥测面板（dev） ===== */
   .tele{position:fixed;right:8px;top:54px;width:min(320px,92vw);max-height:78vh;overflow:auto;
-    border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:12px;z-index:30;display:none;font-size:12px}
+    border:1px solid var(--glass-bd);border-radius:var(--radius-sm);background:var(--glass);padding:12px;z-index:30;display:none;font-size:12px;backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);box-shadow:var(--lift)}
   .tele.on{display:block}
-  .tele h3{font-size:13px;color:var(--gold);margin-bottom:6px}
-  .tele .row{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dashed var(--line)}
+  .tele h3{font-size:13px;color:var(--accent);margin-bottom:6px}
+  .tele .row{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dashed var(--glass-bd)}
   .tele .row b{color:var(--txt)}
   .tele .acts{display:flex;gap:6px;margin-top:8px}
   .tele .acts button{flex:1;font-size:12px;padding:8px}
@@ -120,13 +154,14 @@
   .bottom .card .r{font-size:20px;top:2px;left:3px}
   .bottom .card .s{font-size:17px;top:21px;left:4px}
   .bottom .card .sc{font-size:19px;bottom:2px;right:3px}
-  .bottom .card .jokerArt{top:1px;left:1px;width:calc(100% - 2px);height:calc(100% - 2px)}
+  .bottom .card .jk{font-size:11px}
+  .bottom .card .r2{font-size:15px}
   .bottom .card.back::after{font-size:12px}
-  .ovStats{display:none;width:100%;max-width:340px;margin:6px auto 0;font-size:13px;text-align:left;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:10px 12px}
-  .ovStats h4{margin:0 0 6px;font-size:13px;color:var(--gold)}
-  .ovStats .srow{display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px dashed rgba(255,255,255,.1)}
+  .ovStats{display:none;width:100%;max-width:340px;margin:6px auto 0;font-size:13px;text-align:left;background:rgba(255,255,255,.06);border:1px solid var(--glass-bd);border-radius:var(--radius-sm);padding:10px 12px;backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur)}
+  .ovStats h4{margin:0 0 6px;font-size:13px;color:var(--accent)}
+  .ovStats .srow{display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px dashed var(--glass-bd)}
   .ovStats .srow:last-child{border-bottom:none}
-  .ovStats .srow b{color:var(--gold);font-weight:700}
+  .ovStats .srow b{color:var(--accent);font-weight:700}
   .ovStats .srow .win{color:#5be38a}
   .ovStats .srow .lose{color:#ff8a8a}
 </style>
@@ -162,10 +197,12 @@
     </div>
 
     <div class="hand" id="hand"></div>
+    <div class="wildPicker" id="wildPicker"></div>
     <div class="controls" id="controls"></div>
 
     <div class="overlay" id="overlay">
       <h2 id="ovTitle">最小化</h2>
+      <div id="ovCard" style="display:none"></div>
       <div class="hl" id="ovHl" style="display:none"></div>
       <div class="pill2" id="ovSub">已回到比赛画面 · 点此回到游戏</div>
       <div class="ovStats" id="ovStats"></div>
@@ -231,6 +268,7 @@ function dealHands(){
 /* ============ 球星卡 / 技能元数据 ============ */
 /* 15 人技能池（v0.7 忠实实现，详见 02_mecha_gameplay/PLAYER_SKILLS_v0.2.md 四-G）
  * type: active(主动) / passive(被动/反应) ；cd: 冷却  */
+const JORDAN_WILDS=1;   // 乔丹·神之一手：开局主动指定的万能牌数量（1=原始设计/已验证基线；2=候选增强，平衡仿真证实收益≈0，故未采用，保留为可切换常量）
 const STARS={
   jokic:{key:"jokic",name:"约基奇",skill:"移花接木",type:"active",cd:"1局1次",desc:"出牌阶段与任意一名其他玩家互换一张手牌（对手排序打乱呈现）"},
   wembanyama:{key:"wembanyama",name:"文班亚马",skill:"遮天蔽日",type:"reactive",cd:"1局1次",desc:"对手打出炸弹时抵消其效果（王炸不可抵消）"},
@@ -240,14 +278,32 @@ const STARS={
   harden:{key:"harden",name:"哈登",skill:"and one",type:"active",cd:"1局1次",desc:"出牌后可随即再打出一次相同牌型"},
   doncic:{key:"doncic",name:"东契奇",skill:"luka magic",type:"passive",cd:"1局1次触发",desc:"打出3种以上牌型后复制一张手中最大牌（不含王）"},
   kobe:{key:"kobe",name:"科比",skill:"曼巴时刻",type:"passive",cd:"常驻",desc:"恰好剩最后一个牌型时视为最大点数直接获胜"},
-  duncan:{key:"duncan",name:"邓肯",skill:"石佛",type:"passive",cd:"免疫1次",desc:"免疫任何针对自己的技能攻击（夺牌/强制弃牌）"},
+  duncan:{key:"duncan",name:"邓肯",skill:"石佛",type:"passive",cd:"免疫（无上限）",desc:"免疫任何针对自己的技能攻击（夺牌/强制弃牌），无次数上限"},
   oNeal:{key:"oNeal",name:"奥尼尔",skill:"制霸篮下",type:"active",cd:"1局1次",desc:"非王炸炸弹可升为最高级（等同王炸，不可被压）"},
   kidd:{key:"kidd",name:"基德",skill:"球场视野",type:"passive",cd:"常驻",desc:"叫分前看底牌；若地主可在加倍后分配3张底牌"},
   nowitzki:{key:"nowitzki",name:"诺维斯基",skill:"金鸡独立",type:"passive",cd:"常驻(每累计2对触发)",desc:"本局累计打出两个对子后弃一张手牌加速清牌"},
   curry:{key:"curry",name:"库里",skill:"百步穿杨",type:"active",cd:"1局2次",desc:"对子当作三张打出（重组三连）"},
   lebron:{key:"lebron",name:"詹姆斯",skill:"加冕",type:"active",cd:"1局1次",desc:"截下一张无人能压的单牌并领出"},
-  jordan:{key:"jordan",name:"乔丹",skill:"神之一手",type:"active",cd:"每局指定1张",desc:"开局指定1张万能牌（可变2–A任意牌，不可当王）"}
+  jordan:{key:"jordan",name:"乔丹",skill:"神之一手",type:"active",cd:"每局指定"+JORDAN_WILDS+"张",desc:"开局主动指定"+JORDAN_WILDS+"张手牌为万能牌（可变2–A任意牌，不可当王）"}
 };
+/* 球星卡面图片路径（炉石风竖版肖像，15 张全量） */
+const STAR_IMG={
+  jokic:"star_cards/A_jokic_hearthstone.jpg",
+  wembanyama:"star_cards/A_wembanyama_hearthstone.jpg",
+  alexander:"star_cards/A_alexander_hearthstone.jpg",
+  brunson:"star_cards/A_brunson_hearthstone.jpg",
+  durant:"star_cards/A_durant_hearthstone.jpg",
+  harden:"star_cards/A_harden_hearthstone.jpg",
+  doncic:"star_cards/A_doncic_hearthstone.jpg",
+  kobe:"star_cards/A_kobe_hearthstone.jpg",
+  duncan:"star_cards/A_duncan_hearthstone.jpg",
+  oNeal:"star_cards/A_oNeal_hearthstone.jpg",
+  kidd:"star_cards/A_kidd_hearthstone.jpg",
+  nowitzki:"star_cards/A_nowitzki_hearthstone.jpg",
+  curry:"star_cards/A_curry_hearthstone.jpg",
+  lebron:"star_cards/A_lebron_hearthstone.jpg",
+  jordan:"star_cards/A_jordan_hearthstone.jpg"
+};;
 
 /* ============ NUMBRA 数值配置（Phase 4 回填，N1-N5） ============ */
 const NUMBRA={
@@ -331,6 +387,55 @@ function beats(prev,mv){
   if(mv.type==="bomb"){ if(prev.type==="rocket")return false; if(prev.type==="bomb")return mv.rank>prev.rank; return true; }
   if(prev.type==="bomb"||prev.type==="rocket") return false;
   return mv.type===prev.type && mv.len===prev.len && mv.rank>prev.rank;
+}
+
+/* ============ 乔丹·神之一手：万能牌 human-aware 解析 ============ */
+// 给定物理牌（可能含万能牌）与「每张万能牌→代表点数」映射，返回带替点 rank 的走法。
+// 返回的 mv.cards 仍是原始物理牌引用，仅 mv.rank 为替点后数值——与引擎 AI 路径保持一致，
+// 这样 applyMove 按 id 正确移除、beats 按 mv.rank 判定。
+function parseMoveWithWild(cards, wildMap){
+  if(!cards||!cards.length) return null;
+  const tmp=cards.map(c=> (wildMap[c.id]!==undefined)?{...c,v:wildMap[c.id]}:c);
+  const mv=parseMove(tmp);
+  if(!mv) return null;
+  mv.cards=mv.cards.map(mc=>cards.find(x=>x.id===mc.id));
+  return mv;
+}
+// 万能牌入选手牌时的默认代表点数：取其余非万能牌中出现最多的点数，否则 2(=15)
+function defaultWildRank(forId){
+  const others=[...selected].filter(id=>id!==forId && !(G.ss[0]&&G.ss[0].wildIds.includes(id)));
+  if(others.length){
+    const cnt={}; others.forEach(id=>{ const c=G.players[0].hand.find(x=>x.id===id); if(c&&c.v<=15) cnt[c.v]=(cnt[c.v]||0)+1; });
+    let best=15,bestN=0; Object.keys(cnt).map(Number).forEach(v=>{ if(cnt[v]>bestN){bestN=cnt[v];best=v;} });
+    if(bestN>0) return best;
+  }
+  return 15;
+}
+// 清理 wildChoice：仅保留「仍在选中且仍是万能牌」的条目
+function pruneWildChoice(){
+  if(!G.ss[0]) return;
+  const valid=new Set([...selected].filter(id=>G.ss[0].wildIds.includes(id)));
+  Object.keys(G.wildChoice).forEach(k=>{ if(!valid.has(Number(k))) delete G.wildChoice[k]; });
+}
+// 万能牌点数选择器（仅在人类回合、且选中了万能牌时显示）
+function renderWildPicker(){
+  const wrap=document.getElementById("wildPicker"); if(!wrap) return;
+  const wid=(G.ss[0]&&G.ss[0].wildIds)?G.ss[0].wildIds:[];
+  const selWilds=[...selected].filter(id=>wid.includes(id));
+  if(G.phase!=="play"||G.turn!==0||!selWilds.length){ wrap.style.display="none"; wrap.innerHTML=""; return; }
+  wrap.style.display="flex"; wrap.innerHTML="";
+  const title=document.createElement("div"); title.className="wpTitle"; title.textContent="🐐 万能牌：为选中的万能牌选择代表的点数"; wrap.appendChild(title);
+  selWilds.forEach(id=>{
+    const card=G.players[0].hand.find(c=>c.id===id);
+    const row=document.createElement("div"); row.className="wpRow";
+    const lab=document.createElement("span"); lab.className="wpLabel"; lab.textContent=(LABEL[card.v]||card.label)+" →"; row.appendChild(lab);
+    [3,4,5,6,7,8,9,10,11,12,13,14,15].forEach(r=>{
+      const b=document.createElement("button"); b.className="wpRank"+(G.wildChoice[id]===r?" on":""); b.textContent=LABEL[r]!==undefined?LABEL[r]:r;
+      b.onclick=(e)=>{ e.stopPropagation(); G.wildChoice[id]=r; renderWildPicker(); };
+      row.appendChild(b);
+    });
+    wrap.appendChild(row);
+  });
 }
 
 /* ============ 走子生成 ============ */
@@ -578,7 +683,7 @@ const G={
   timer:HUMAN_TURN, timerId:null, aiTimer:null, immunityTimer:null, clockId:null, elapsed:0,
   skillStar:null, skillUsed:false, jordanShield:true, forcedLead:-1, skillMode:null,
   star:[null,null,null], ss:[freshSS(),freshSS(),freshSS()], _noAdvance:false,
-  durantSelect:false, candidates:[],
+  durantSelect:false, candidates:[], jordanSelect:false, jordanPicks:[], wildChoice:{},
   moveCount:0, humanTurns:0, aiTurns:0, humanStartStrength:0, humanStartBombs:0, bombPlayed:false
 };
 
@@ -590,7 +695,7 @@ function newGame(){
   clearTimers(); stopMatchClock();
   G.skillStar=null; G.skillUsed=false; G.jordanShield=true; G.forcedLead=-1; G.skillMode=null; G.moveCount=0;
   G.star=[null,null,null]; G.ss=[freshSS(),freshSS(),freshSS()]; G._noAdvance=false;
-  G.durantSelect=false; G.candidates=[];
+  G.durantSelect=false; G.candidates=[]; G.jordanSelect=false; G.jordanPicks=[]; G.wildChoice={};
   G.bombPlayed=false; G.bombCount=0; G.elapsed=0; G.humanTurns=0; G.aiTurns=0;
   G.players.forEach(p=>p.hand=[]); G.bottom=[]; G.landlord=-1; G.lastMove=null; G.lastSeat=-1;
   G.mult=1; G.doubleDone=false; G.passes=0;
@@ -614,7 +719,8 @@ function renderPickStar(){
   cand.forEach(k=>{
     const st=STARS[k];
     const b=document.createElement("button");b.className="btn starPick";
-    b.innerHTML=`<div class="spName">🏀 <b>${st.name}</b></div><div class="spSkill">${st.skill}</div><div class="spType">${typeTxt(st)}</div>`;
+    const img=STAR_IMG[k]?`<img src="${STAR_IMG[k]}" class="spImg" alt="${st.name}" loading="lazy">`:'';
+    b.innerHTML=`${img}<div class="spName"><b>${st.name}</b></div><div class="spSkill">${st.skill}</div><div class="spType">${typeTxt(st)}</div>`;
     b.onclick=()=>pickStar(k);
     b.onmouseenter=(e)=>showTip(st);
     b.onmousemove=(e)=>moveTip(e);
@@ -627,19 +733,60 @@ function ensureTip(){ let t=document.getElementById("skillTip"); if(!t){ t=docum
 function showTip(st){ const t=ensureTip(); t.innerHTML=`<b>${st.name} · ${st.skill}</b><div class="tipType">${st.type==='active'?'主动技能':(st.type==='reactive'?'反应技能':(st.type==='passive+active'?'被动+主动':'被动技能'))} · ${st.cd||''}</div><div class="tipDesc">${st.desc}</div>`; t.style.display="block"; }
 function moveTip(e){ const t=ensureTip(); const w=t.offsetWidth||260; let x=e.clientX+14; if(x+w>window.innerWidth-10) x=e.clientX-w-14; t.style.left=x+"px"; t.style.top=(e.clientY+14)+"px"; }
 function hideTip(){ const t=document.getElementById("skillTip"); if(t) t.style.display="none"; }
+function aiPickFromPool(){
+  // 与人类一致的"3 选 1"：先从全体 15 星随机抽 3 名候选，再随机选 1 名
+  const keysAll=Object.keys(STARS);
+  const pool=[]; while(pool.length<3){ const k=keysAll[Math.floor(Math.random()*keysAll.length)]; if(!pool.includes(k)) pool.push(k); }
+  return pool[Math.floor(Math.random()*3)];
+}
 function pickStar(k){
   hideTip();                                  // 选英雄后关闭技能说明浮窗
   G.skillStar=k; G.star[0]=k;
   const st=STARS[k];
-  // AI 两座随机抽星（与人类同池），初始化各座技能状态
-  const keys=Object.keys(STARS);
-  G.star[1]=keys[Math.floor(Math.random()*keys.length)];
-  G.star[2]=keys[Math.floor(Math.random()*keys.length)];
+  // AI 两座：各自从全体 15 星随机抽 3 名候选，再随机选 1（与人类一致的"3 选 1"），确保三人均持技能
+  G.star[1]=aiPickFromPool();
+  G.star[2]=aiPickFromPool();
   G.ss=[freshSS(),freshSS(),freshSS()];
-  document.getElementById("seat0").querySelector(".nm").innerHTML=`🧑 你（${st.name}） <span class="tag" id="tag0" style="display:none">地主</span>`;
+  const av=(key)=>STAR_IMG[key]?`<img src="${STAR_IMG[key]}" class="seatAv" alt="${STARS[key].name}">`:'';
+  document.getElementById("seat0").querySelector(".nm").innerHTML=`${av(k)}🧑 你（${st.name}） <span class="tag" id="tag0" style="display:none">地主</span>`;
+  document.getElementById("seat1").querySelector(".nm").innerHTML=`${av(G.star[1])}🤖 AI 对手 ①（${STARS[G.star[1]].name}） <span class="tag" id="tag1" style="display:none">地主</span>`;
+  document.getElementById("seat2").querySelector(".nm").innerHTML=`${av(G.star[2])}🤖 AI 对手 ②（${STARS[G.star[2]].name}） <span class="tag" id="tag2" style="display:none">地主</span>`;
   const tl = st.type==='active' ? '主动' : (st.type==='reactive' ? '反应' : (st.type==='passive+active' ? '被动+主动' : '被动'));
   log(`你选择了 ${st.name} · ${st.skill}（${tl}）｜AI：${STARS[G.star[1]].name} / ${STARS[G.star[2]].name}`);
   startDeal();
+}
+
+/* ---- 乔丹·神之一手：开局主动指定 JORDAN_WILDS 张手牌为万能牌 ---- */
+function enterJordanWildSelect(){
+  G.jordanSelect=true; G.jordanPicks=[];
+  setPhaseTxt(`🐐 乔丹·神之一手：点击 ${JORDAN_WILDS} 张手牌，将其指定为万能牌（可变 2–A 任意牌，不可当王）`);
+  log(`乔丹·神之一手 待指定：点击 ${JORDAN_WILDS} 张手牌作为万能牌`,true);
+  renderAll();
+  const c=document.getElementById("controls");c.innerHTML="";
+  const tip=document.createElement("div");tip.className="skill";tip.style.cssText="text-align:center;padding:6px;color:var(--gold)";
+  tip.textContent=`👆 点击你想指定为「万能牌」的 ${JORDAN_WILDS} 张手牌（已选 0/${JORDAN_WILDS}）`;
+  c.appendChild(tip);
+  updateJordanConfirm();
+}
+function updateJordanConfirm(){
+  if(!G.jordanSelect) return;
+  const c=document.getElementById("controls"); if(!c) return;
+  const tip=c.querySelector(".skill"); if(tip) tip.textContent=`👆 已选 ${G.jordanPicks.length}/${JORDAN_WILDS} 张（再点已选可取消）`;
+  let btn=c.querySelector("#jordanConfirm");
+  if(G.jordanPicks.length===JORDAN_WILDS){
+    if(!btn){ btn=document.createElement("button"); btn.id="jordanConfirm"; btn.className="btn"; btn.textContent="确认指定 ✷"; btn.onclick=designateWild; c.appendChild(btn); }
+  } else if(btn){ btn.remove(); }
+}
+function designateWild(){
+  if(!G.jordanSelect) return;
+  if(G.jordanPicks.length!==JORDAN_WILDS) return;
+  G.ss[0].wildIds=G.jordanPicks.slice();
+  G.jordanSelect=false;
+  const labels=G.jordanPicks.map(id=>{const c=G.players[0].hand.find(x=>x.id===id);return LABEL[c.v]||c.label;});
+  log(`🐐 神之一手：将 ${labels.join("、")} 指定为万能牌（可变 2–A，不可当王）`,true);
+  renderAll();
+  setPhaseTxt("叫地主（叫分制：1/2/3 分，叫 3 分立即当地主；都不叫则重发）");
+  stepBid();
 }
 
 /* ---- S2 发牌 + N4 极端坏牌兜底重发 + 发牌后排序 ---- */
@@ -649,8 +796,8 @@ function startDeal(){
   const best=dealHands();
   G.players[0].hand=best.p0; G.players[1].hand=best.p1; G.players[2].hand=best.p2; G.bottom=best.bottom;
   G.players.forEach(p=>sortHand(p.hand));            // 发牌后所有手牌排序（成熟斗地主习惯）
-  // 乔丹·神之一手：万能牌 = 各座最低牌（2–A 可变，不可当王）
-  [0,1,2].forEach(s=>{ if(G.star[s]==='jordan'){ const h=G.players[s].hand; G.ss[s].wildId = h.length? worstCardOf(h).id : null; } });
+  // 乔丹·神之一手：AI 座位自动指定最低 JORDAN_WILDS 张为万能牌；人类座位改为「开局主动指定」（点选手牌）
+  [1,2].forEach(s=>{ if(G.star[s]==='jordan'){ const h=G.players[s].hand; G.ss[s].wildIds = h.length? pickTwoLowest(h).map(c=>c.id) : []; } });
   G.humanStartStrength=handStrength(best.p0); G.humanStartBombs=countBombs(best.p0);
   if(best.hasBomb) log("💣 本局含保底炸弹（娱乐化回调）");
   log("发牌完成：每人 17 张，底牌 3 张（暗牌，确定地主后翻开）。");
@@ -660,7 +807,9 @@ function startDeal(){
   setPhaseTxt("叫地主（叫分制：1/2/3 分，叫 3 分立即当地主；都不叫则重发）");
   renderAll();
   showBottomCards();
-  stepBid();
+  // 乔丹·神之一手：人类座位进入「主动指定万能牌」模式（开局点选），确认后再叫地主
+  if(G.star[0]==='jordan' && !G.ss[0].wildIds.length){ enterJordanWildSelect(); }
+  else stepBid();
 }
 
 /* ---- v0.7 标准叫分制（参照 QQ 斗地主经典规则）----
@@ -767,10 +916,11 @@ function startPlay(){
  *  人类与 AI 座均从 STARS 池抽星，机制完全通用（autoPlaySeat 统一驱动）
  * ==========================================================================*/
 var SKILLS_OFF=false;
+function pickTwoLowest(h){ return h.slice().sort((a,b)=>a.v-b.v).slice(0, Math.min(JORDAN_WILDS,h.length)); }
 function freshSS(){ return { used:{}, foul:{}, drawn:{}, types:new Set(), pairs:0, discarded:0,
   jokicUsed:false, curryUsed:0, hardenUsed:false, lebronUsed:false, wembyUsed:false,
   oNealUsed:false, durantUsed:false, retakeReady:false, _lastHadMax:false,
-  doncicUsed:false, duncanUsed:false, wildId:null, kiddSeen:false }; }
+  doncicUsed:false, wildIds:[], kiddSeen:false }; }
 function oppAll(s){ return [0,1,2].filter(x=>x!==s); }
 function isFoe(a,b){ return (a===G.landlord)?(b!==G.landlord):(b===G.landlord); }
 function maxCardOf(h){ return h.length? h.slice().sort((x,y)=>y.v-x.v)[0]:null; }
@@ -783,7 +933,8 @@ function genAllForSeat(seat){
   out.push(...genAllMoves(hand));
   if(SKILLS_OFF) return out;
   if(st==='brunson' && hand.length<=5){ const tmp=hand.map(c=>({...c,v:remapLevel(c.v)})); out.push(...genAllMoves(tmp).map(mv=>({...mv,cards:mv.cards.map(mc=>hand.find(h=>h.id===mc.id))}))); }
-  if(st==='jordan' && G.ss[seat].wildId!=null){ const wid=G.ss[seat].wildId; for(let r=3;r<=15;r++){ const tmp=hand.map(c=>c.id===wid?{...c,v:r}:c); out.push(...genAllMoves(tmp).map(mv=>({...mv,cards:mv.cards.map(mc=>hand.find(h=>h.id===mc.id))}))); } }
+  if(st==='jordan' && G.ss[seat].wildIds.length){ const wid=G.ss[seat].wildIds;
+    for(let r1=3;r1<=15;r1++) for(let r2=r1;r2<=15;r2++){ const tmp=hand.map(c=> c.id===wid[0]?{...c,v:r1}: (wid[1]!==undefined && c.id===wid[1]?{...c,v:r2}:c)); out.push(...genAllMoves(tmp).map(mv=>({...mv,cards:mv.cards.map(mc=>hand.find(h=>h.id===mc.id))}))); } }
   return out;
 }
 function genBeatingForSeat(seat,prev){
@@ -791,7 +942,8 @@ function genBeatingForSeat(seat,prev){
   out.push(...genBeating(hand,prev));
   if(SKILLS_OFF) return out;
   if(st==='brunson' && hand.length<=5){ const tmp=hand.map(c=>({...c,v:remapLevel(c.v)})); out.push(...genBeating(tmp,prev).map(mv=>({...mv,cards:mv.cards.map(mc=>hand.find(h=>h.id===mc.id))}))); }
-  if(st==='jordan' && G.ss[seat].wildId!=null){ const wid=G.ss[seat].wildId; for(let r=3;r<=15;r++){ const tmp=hand.map(c=>c.id===wid?{...c,v:r}:c); out.push(...genBeating(tmp,prev).map(mv=>({...mv,cards:mv.cards.map(mc=>hand.find(h=>h.id===mc.id))}))); } }
+  if(st==='jordan' && G.ss[seat].wildIds.length){ const wid=G.ss[seat].wildIds;
+    for(let r1=3;r1<=15;r1++) for(let r2=r1;r2<=15;r2++){ const tmp=hand.map(c=> c.id===wid[0]?{...c,v:r1}: (wid[1]!==undefined && c.id===wid[1]?{...c,v:r2}:c)); out.push(...genBeating(tmp,prev).map(mv=>({...mv,cards:mv.cards.map(mc=>hand.find(h=>h.id===mc.id))}))); } }
   return out;
 }
 function strongPick(seat, moves, prev){
@@ -1045,10 +1197,22 @@ function onPlay(){
     return;
   }
   const cards=[...selected].map(id=>G.players[0].hand.find(x=>x.id==id));
-  const mv=parseMove(cards);
+  const wid=(G.ss[0]&&G.ss[0].wildIds)?G.ss[0].wildIds:[];
+  const selWilds=cards.filter(c=>wid.includes(c.id));
+  let mv;
+  if(selWilds.length){
+    const wildMap={};
+    for(const w of selWilds){
+      if(G.wildChoice[w.id]===undefined){ alert("请先为万能牌选择要代表的点数（下方金色按钮）"); return; }
+      wildMap[w.id]=G.wildChoice[w.id];
+    }
+    mv=parseMoveWithWild(cards,wildMap);
+  } else {
+    mv=parseMove(cards);
+  }
   if(!mv){alert("牌型不合法");return;}
   if(!beats(G.lastMove,mv)){alert("管不上上家");return;}
-  clearTimers(); selected.clear(); applyMove(0,mv);
+  clearTimers(); selected.clear(); G.wildChoice={}; applyMove(0,mv);
 }
 function buildReorgMove(ids){
   if(ids.length<2) return null;
@@ -1153,6 +1317,11 @@ function endGame(winner){
   const m=Math.floor(G.elapsed/60),s=G.elapsed%60;
   recordTelemetry({elapsed:G.elapsed, humanTurns:G.humanTurns, aiTurns:G.aiTurns, moves:G.moveCount, winner, landlordWin, mult:G.mult, skill:G.skillStar, skillUsed:G.skillUsed, bombPlayed:G.bombPlayed, date:new Date().toISOString()});
   document.getElementById("ovTitle").textContent=(winner===0? "🏆 你赢了":"😖 本局结束");
+  // 胜者球星卡
+  const winStar=G.star[winner];
+  const ovCard=document.getElementById("ovCard");
+  if(winStar && STAR_IMG[winStar]){ ovCard.style.display="block"; ovCard.innerHTML=`<img src="${STAR_IMG[winStar]}" class="ovCardImg" alt="${STARS[winStar].name}">`; }
+  else { ovCard.style.display="none"; }
   const hlEl=document.getElementById("ovHl");
   if(hl.length){ hlEl.style.display="block"; hlEl.textContent="✨ 高光：" + hl.join(" · "); } else hlEl.style.display="none";
   document.getElementById("ovSub").textContent=`${title} · 最终倍数 ×${G.mult} · 胜者：${G.players[winner].name} · 本局 ${m}:${s<10?"0":""}${s}`;
@@ -1194,9 +1363,9 @@ function renderSkillStatus(){
   else if(st.key==="durant"||st.key==="harden"||st.key==="oNeal"||st.key==="jokic"||st.key==="wembanyama") used=S[st.key+"Used"]?"已用 · 一局一次":"可用 · 一局一次";
   else if(st.key==="lebron") used=S.lebronUsed?"已用 · 一局一次":"可用 · 一局一次";
   else if(st.key==="doncic") used=S.doncicUsed?"已触发":"待命（打出3+牌型触发）";
-  else if(st.key==="duncan") used=S.duncanUsed?"已免疫1次":"免疫待命（1次）";
+  else if(st.key==="duncan") used="免疫（无上限）";
   else if(st.key==="alexander"){ const f=Object.values(S.foul).reduce((a,b)=>a+b,0); used=`犯规累计 ${f} · 抽取${Object.keys(S.drawn).length}次`; }
-  else if(st.key==="jordan") used=S.wildId!=null?`万能牌已指定`:"未指定";
+  else if(st.key==="jordan"){ const wcs=G.players[0].hand.filter(c=>(S.wildIds||[]).includes(c.id)); used=wcs.length?`万能牌：${wcs.map(c=>LABEL[c.v]||c.label).join("、")}（点击无效，开局已指定）`:"未指定"; }
   else if(st.key==="kidd") used="视野常驻";
   else if(st.key==="nowitzki") used=`累计对子 ${S.pairs} · 已弃 ${S.discarded}`;
   else if(st.key==="brunson") used="残局+1级常驻";
@@ -1214,7 +1383,7 @@ function renderHands(){
   });
   renderHand();
 }
-/* v0.7.2 牌面：直接使用样品图片(54张完整牌组 Art Deco 风格) */
+/* v0.7.3 牌面：纯文字渲染（点数+花色符号），不再依赖 sample_cards 龙纹图片 */
 const SUIT_NAME={'♠':'spade','♥':'heart','♣':'club','♦':'diamond'};
 const V_RANK={3:'3',4:'4',5:'5',6:'6',7:'7',8:'8',9:'9',10:'10',11:'J',12:'Q',13:'K',14:'A',15:'2'};
 function cardImageURL(c){
@@ -1225,28 +1394,51 @@ function cardImageURL(c){
   return `sample_cards/${prefix}_${rank}.jpg`;
 }
 function cardHTML(c){
-  return `<img src="${cardImageURL(c)}" alt="${c.s}${c.label}" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:6px">`;
+  // v0.7.3 牌面：纯文字渲染（点数 .r + 花色角标 .s + 花色大标 .sc），字号改 CSS 即生效，不再依赖龙纹图片
+  if(c.v===17) return `<div class="jk">大王</div>`;
+  if(c.v===16) return `<div class="jk">小王</div>`;
+  const suit=c.s||"";
+  if(!suit) return `<div class="r2">${c.label}</div>`;   // 幻影牌（无花色）居中显示点数
+  return `<div class="r">${c.label}</div><div class="s">${suit}</div><div class="sc">${suit}</div>`;
 }
 function renderHand(){
   const h=document.getElementById("hand");h.innerHTML="";
   const dMode=!!G.durantSelect;
+  const wMode=!!G.jordanSelect;
+  pruneWildChoice();
   G.players[0].hand.forEach(c=>{
     const el=document.createElement("div");
     const canPick=!dMode || (c.v>=11 && c.v<=15);
-    el.className="card"+(c.red?" red":"")+(selected.has(c.id)?" sel":"")+(dMode && !canPick?" dim":"");
+    const isWild=(G.ss[0] && G.ss[0].wildIds && (G.ss[0].wildIds.includes(c.id) || G.jordanPicks.includes(c.id)));
+    const isPicked=G.jordanPicks.includes(c.id);
+    el.className="card"+(c.red?" red":"")+(selected.has(c.id)?" sel":"")+(isWild?" wild":"")+(isPicked?" picked":"")+(dMode && !canPick?" dim":"");
     el.innerHTML=cardHTML(c);
-    el.onclick=()=>{if(G.phase!=="play"||G.turn!==0)return;
+    el.onclick=()=>{
+      if(wMode){
+        const i=G.jordanPicks.indexOf(c.id);
+        if(i>=0) G.jordanPicks.splice(i,1);
+        else if(G.jordanPicks.length<JORDAN_WILDS) G.jordanPicks.push(c.id);
+        renderHand(); updateJordanConfirm(); return;
+      }
+      if(G.phase!=="play"||G.turn!==0)return;
       if(dMode){ if(canPick) doDurantDiscard(c); return; }
-      if(selected.has(c.id))selected.delete(c.id);else selected.add(c.id); renderHand(); updatePlayBtn();};
+      if(selected.has(c.id))selected.delete(c.id);
+      else { selected.add(c.id);
+        if(G.ss[0] && G.ss[0].wildIds.includes(c.id) && G.wildChoice[c.id]===undefined) G.wildChoice[c.id]=defaultWildRank(c.id);
+      }
+      renderHand(); updatePlayBtn();};
+    if(wMode){ el.style.cursor="pointer"; }
     if(dMode && !canPick){ el.style.opacity=".3"; el.style.cursor="not-allowed"; }
     h.appendChild(el);
   });
+  renderWildPicker();
 }
 function renderCounts(){[0,1,2].forEach(s=>document.getElementById("cnt"+s).textContent=G.players[s].hand.length);}
 function renderLast(){
   const el=document.getElementById("lastMove");el.innerHTML="";
   if(G.lastMove){G.lastMove.cards.forEach(c=>{
-    const k=document.createElement("div");k.className="card"+(c.red?" red":"")+(c.phantom?" phantom":"");
+    const isWild=G.ss[G.lastSeat] && G.ss[G.lastSeat].wildIds && G.ss[G.lastSeat].wildIds.includes(c.id);
+    const k=document.createElement("div");k.className="card"+(c.red?" red":"")+(c.phantom?" phantom":"")+(isWild?" wild":"");
     k.style.cursor="default";
     k.innerHTML=cardHTML(c);
     el.appendChild(k);
