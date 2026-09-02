@@ -68,11 +68,11 @@
     kidd: "star_cards/A_kidd_hearthstone.jpg", nowitzki: "star_cards/A_nowitzki_hearthstone.jpg",
     curry: "star_cards/A_curry_hearthstone.jpg", lebron: "star_cards/A_lebron_hearthstone.jpg",
     jordan: "star_cards/A_jordan_hearthstone.jpg",
-    giannis: "star_cards/A_giannis_hearthstone.png", edwards: "star_cards/A_edwards_hearthstone.png",
-    mitchell: "star_cards/A_mitchell_hearthstone.png", cunningham: "star_cards/A_cunningham_hearthstone.png",
-    leonard: "star_cards/A_leonard_hearthstone.png", kareem: "star_cards/A_kareem_hearthstone.png",
-    magic: "star_cards/A_magic_hearthstone.png", bird: "star_cards/A_bird_hearthstone.png",
-    kg: "star_cards/A_kg_hearthstone.png", wade: "star_cards/A_wade_hearthstone.png"
+    giannis: "star_cards/A_giannis_hearthstone.jpg", edwards: "star_cards/A_edwards_hearthstone.jpg",
+    mitchell: "star_cards/A_mitchell_hearthstone.jpg", cunningham: "star_cards/A_cunningham_hearthstone.jpg",
+    leonard: "star_cards/A_leonard_hearthstone.jpg", kareem: "star_cards/A_kareem_hearthstone.jpg",
+    magic: "star_cards/A_magic_hearthstone.jpg", bird: "star_cards/A_bird_hearthstone.jpg",
+    kg: "star_cards/A_kg_hearthstone.jpg", wade: "star_cards/A_wade_hearthstone.jpg"
   };
 
   /* ---------- 牌组 ---------- */
