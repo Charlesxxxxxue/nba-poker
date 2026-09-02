@@ -45,6 +45,15 @@
   .seat .cnt{position:absolute;right:6px;top:6px;font-size:18px;color:var(--accent);font-weight:600}
   .seat .bubble{margin-top:4px;font-size:11px;color:var(--dim);min-height:14px}
   .seat .role{font-size:10px;color:var(--accent-2);font-weight:700}
+  /* v1.6 犯规条（字母哥·字母轰炸 / 亚历山大·造犯规）：平行四边形四格蓄力条 */
+  .foulrow{display:flex;align-items:center;gap:5px;margin-top:3px}
+  .foulbar{display:inline-flex;gap:2px;align-items:center;transform:skewX(-16deg)}
+  .foulbar .fb{width:10px;height:12px;border:1px solid rgba(255,255,255,.30);background:rgba(255,255,255,.07);
+    border-radius:1px;transition:background .25s,box-shadow .25s,border-color .25s}
+  .foulbar .fb.on{background:linear-gradient(180deg,#ffe08a,#ff9f0a);border-color:#ffd75e;box-shadow:0 0 7px rgba(255,183,60,.85)}
+  .foulbar.full{animation:fbPulse 1.1s ease-in-out infinite}
+  @keyframes fbPulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.45) drop-shadow(0 0 5px rgba(255,183,60,.9))}}
+  .foultxt{font-size:9px;color:var(--gold);font-weight:700;letter-spacing:.3px;transform:skewX(-16deg);white-space:nowrap}
   .center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:120px}
   .lastmove{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;min-height:46px;align-items:center}
   .phase{font-size:12px;color:var(--dim);text-align:center}
@@ -94,6 +103,13 @@
   @keyframes dealIn{from{opacity:0;transform:translateY(26px) scale(.85)}to{opacity:1;transform:translateY(0) scale(1)}}
   .lastmove .card{animation:playPop .28s ease}
   @keyframes playPop{from{opacity:0;transform:scale(.7) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+  /* v1.5 贾巴尔·天勾无解：单张化对时「补全」的那张牌 —— 黄色光圈标注，与真实手牌区分 */
+  .card.synth{border:2px solid #ffc83d;background:linear-gradient(180deg,#fff7e3,#ffe9b3);box-shadow:0 0 10px rgba(255,183,3,.6),0 0 0 3px rgba(255,200,61,.26)}
+  .card.synth::before{content:"";position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,200,61,.26),transparent 60%);pointer-events:none;z-index:0}
+  .card.synth::after{content:"\8865";position:absolute;top:1px;right:3px;font-size:11px;color:#7a4a00;font-weight:800;line-height:1;z-index:2}
+  .lastmove .card.synth{animation:synthPop .32s cubic-bezier(.2,.8,.3,1) .18s backwards, synthGlow 1.8s ease-in-out .5s infinite}
+  @keyframes synthPop{from{opacity:0;transform:scale(.6) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+  @keyframes synthGlow{0%,100%{box-shadow:0 0 8px rgba(255,183,3,.5),0 0 0 3px rgba(255,200,61,.2)}50%{box-shadow:0 0 16px rgba(255,183,3,.95),0 0 0 4px rgba(255,200,61,.4)}}
   /* 底牌暗牌（牌背）：叫完地主前不明示 */
   .card.back{background:linear-gradient(145deg,#2f6df0 0%,#1b3a7a 100%);border-color:rgba(255,255,255,.35);cursor:default;
     background-image:repeating-linear-gradient(45deg, rgba(255,255,255,.08) 0 4px, transparent 4px 8px),linear-gradient(145deg,#2f6df0 0%,#1b3a7a 100%)}
@@ -531,6 +547,7 @@ function aiBid(hand){
 function aiDouble(seat){ return Math.random()<0.45; }
 
 /* ============ 游戏状态 ============ */
+let CARD_SEQ=0;   // 引擎自有卡牌序号（幻影/复制卡用；rules.js 内另有独立副本用于 buildDeck）
 const G={
   players:[{name:"你",hand:[]},{name:"AI 对手 ①",hand:[]},{name:"AI 对手 ②",hand:[]}],
   bottom:[], landlord:-1, turn:0, lastMove:null, lastSeat:-1, phase:"idle", passes:0,
@@ -800,7 +817,11 @@ var SKILLS_OFF=false;
 function freshSS(){ return { used:{}, foul:{}, drawn:{}, types:new Set(), pairs:0, discarded:0,
   jokicUsed:false, curryUsed:0, hardenUsed:false, lebronUsed:false, wembyUsed:false,
   oNealUsed:false, durantUsed:false, retakeReady:false, _lastHadMax:false,
-  doncicUsed:false, wildIds:[], kiddSeen:false }; }
+  doncicUsed:false, wildIds:[], kiddSeen:false,
+  // v1.1 扩库新10人状态
+  giannisUsed:false, gFoul:0, edwardsUsed:false, edwardsBoost:0, mitchellUsed:false, cunninghamCount:0,
+  leonardUsed:false, kareemUsed:false, magicUsed:false, birdUsed:false,   kgUsed:0,
+  wadeUsed:false, frozen:false, kareemImmune:false, recentTypes:[] }; }
 /* oppAll → rules.js（经 window 全局提供） */
 function isFoe(a,b){ return (a===G.landlord)?(b!==G.landlord):(b===G.landlord); }
 function maxCardOf(h){ return h.length? h.slice().sort((x,y)=>y.v-x.v)[0]:null; }
@@ -815,15 +836,27 @@ function genAllForSeat(seat){
   if(st==='brunson' && hand.length<=5){ const tmp=hand.map(c=>({...c,v:remapLevel(c.v)})); out.push(...genAllMoves(tmp).map(mv=>({...mv,cards:mv.cards.map(mc=>hand.find(h=>h.id===mc.id))}))); }
   if(st==='jordan' && G.ss[seat].wildIds.length){ const wid=G.ss[seat].wildIds;
     for(let r1=3;r1<=15;r1++) for(let r2=r1;r2<=15;r2++){ const tmp=hand.map(c=> c.id===wid[0]?{...c,v:r1}: (wid[1]!==undefined && c.id===wid[1]?{...c,v:r2}:c)); out.push(...genAllMoves(tmp).map(mv=>({...mv,cards:mv.cards.map(mc=>hand.find(h=>h.id===mc.id))}))); } }
+  // v1.1 扩库：韦德·闪电突破：点数<8的单牌默认+1（封顶8）
+  if(st==='wade'){ const tmp=hand.map(c=>({...c, v:(c.v<=10? Math.min(11,c.v+1):c.v)})); out.push(...genAllMoves(tmp).map(mv=>({...mv,_wade:true,cards:mv.cards.map(mc=>hand.find(h=>h.id===mc.id))}))); }
+  // 爱德华兹·三分暴雨（v1.3 重做）：改为"点数+2"强化，不再生成合成对（见 autoPlaySeat）
+  // 伯德·致命三分：三带两单（两张不同点单张）
+  if(st==='bird'){ const g2=groupByVal(hand); const trv=Object.keys(g2).map(Number).filter(v=>g2[v].length>=3); trv.forEach(v=>{ const others=Object.keys(g2).map(Number).filter(o=>o!==v && g2[o].length>=1); for(let i=0;i<others.length;i++)for(let j=i+1;j<others.length;j++){ if(others[i]!==others[j]) out.push({type:"triple1s",rank:v,len:1,_bird:true,cards:g2[v].slice(0,3).concat([g2[others[i]][0],g2[others[j]][0]])}); } }); }
+  // v1.5 贾巴尔·天勾无解：v1.4「三张拆对子」已废弃（触发率仅11%，与牌理相悖）。新机制见 genBeatingForSeat（压牌时单张可当对子）
   return out;
 }
 function genBeatingForSeat(seat,prev){
   const hand=G.players[seat].hand, st=G.star[seat], out=[];
   out.push(...genBeating(hand,prev));
+  // v1.4 贾巴尔改为主动技能，原被动免疫（高对不可压）已移除
   if(SKILLS_OFF) return out;
   if(st==='brunson' && hand.length<=5){ const tmp=hand.map(c=>({...c,v:remapLevel(c.v)})); out.push(...genBeating(tmp,prev).map(mv=>({...mv,cards:mv.cards.map(mc=>hand.find(h=>h.id===mc.id))}))); }
   if(st==='jordan' && G.ss[seat].wildIds.length){ const wid=G.ss[seat].wildIds;
     for(let r1=3;r1<=15;r1++) for(let r2=r1;r2<=15;r2++){ const tmp=hand.map(c=> c.id===wid[0]?{...c,v:r1}: (wid[1]!==undefined && c.id===wid[1]?{...c,v:r2}:c)); out.push(...genBeating(tmp,prev).map(mv=>({...mv,cards:mv.cards.map(mc=>hand.find(h=>h.id===mc.id))}))); } }
+  // v1.1 扩库：韦德·闪电突破：低牌+1（跟牌同样生效）
+  if(st==='wade'){ const tmp=hand.map(c=>({...c, v:(c.v<=10? Math.min(11,c.v+1):c.v)})); out.push(...genBeating(tmp,prev).map(mv=>({...mv,_wade:true,cards:mv.cards.map(mc=>hand.find(h=>h.id===mc.id))}))); }
+  // 爱德华兹·三分暴雨（v1.3 重做）：合成对跟牌已移除，改为"点数+2"强化（见 autoPlaySeat 跟牌分支）
+  // v1.5 贾巴尔·天勾无解（被动·重做）：压牌时，你的任意单张可当作对子使用（1张压2张，牌数摆动型）
+  if(st==='kareem' && prev.type==='pair'){ hand.forEach(c=>{ if(c.v<16 && c.v>prev.rank) out.push({type:"pair", rank:c.v, len:1, _kareem:true, cards:[c]}); }); }
   return out;
 }
 function strongPick(seat, moves, prev){
@@ -885,21 +918,31 @@ function hardenPick(seat,mv){
 /* 统一驱动：人类(强策略)/AI 座(原 aiChoose 保留平衡削弱) 均走此函数，技能机制完全通用 */
 function autoPlaySeat(seat, prev){
   const st=G.star[seat], S=G.ss[seat];
-  if(SKILLS_OFF || !st){ const mv=(seat===0)?aiStrong(seat,prev):aiChoose(seat,prev); applyMove(seat,mv); return; }
+  if(SKILLS_OFF || !st){ const mv=(seat===0)?(prev?strongPick(seat,genBeatingForSeat(seat,prev),prev):strongPick(seat,genAllForSeat(seat),null)):aiChoose(seat,prev); applyMove(seat,mv); return; }
   const hand=G.players[seat].hand;
+  if(S.frozen){ S.frozen=false; log(`🧊 ${G.players[seat].name} 被冻结，跳过本回合`); applyMove(seat,null); return; }
   if(!prev){ // ---------- 领出 ----------
     if(st==='kobe'){ const all=genAllForSeat(seat); const fin=all.find(m=>m.cards.length===hand.length); if(fin){ commitMove(seat,fin); return; } }
     if(st==='durant' && S.retakeReady && !S.durantUsed){ const cand=hand.filter(c=>c.v>=11 && c.v<=15); if(cand.length){ cand.sort((a,b)=>a.v-b.v); const dc=cand[0]; G.players[seat].hand=hand.filter(c=>c.id!==dc.id); S.durantUsed=true; S.retakeReady=false; G.lastMove=null; G.passes=0; log(`💀 ${G.players[seat].name}·死神降临：弃 ${LABEL[dc.v]}（>10）重夺出牌权`); } }
     if(st==='jokic' && !S.jokicUsed && hand.length>1){ jokicSwap(seat); }
     if(st==='alexander'){ const t=Object.keys(S.foul).find(k=>(S.foul[k]||0)>=4 && !S.drawn[k]); if(t!==undefined) alexanderDraw(seat, +t); }
+    // v1.1 扩库·主动效果（领出）：米切尔冻结 / 魔术师传牌
+    if(st==='mitchell' && !S.mitchellUsed){ const foes=oppAll(seat).filter(s=>G.players[s].hand.length>0 && G.players[s].hand.length<=10); if(foes.length){ const f=foes[0]; G.ss[f].frozen=true; S.mitchellUsed=true; log(`🧊 ${G.players[seat].name}·关键先生：冻结 ${G.players[f].name} 下一回合`); } }
+    if(st==='magic' && !S.magicUsed && hand.length<=10){ const foes=oppAll(seat).filter(s=>G.players[s].hand.length>0); if(foes.length){ const f=foes.sort((a,b)=>G.players[a].hand.length-G.players[b].hand.length)[0]; const give=worstCardOf(hand); if(give){ G.players[seat].hand=hand.filter(c=>c.id!==give.id); G.players[f].hand=G.players[f].hand.concat([give]); S.magicUsed=true; log(`🎩 ${G.players[seat].name}·showtime：把 ${LABEL[give.v]} 传给 ${G.players[f].name}`); } } }
     const all=genAllForSeat(seat);
     const mv=(seat===0)? strongPick(seat, all, null) : aiChoose(seat, null);
+    // v1.2 爱德华兹：合成对仅在「跟牌压对子」时使用（见下方跟牌分支），避免领出时拆散顺子/连对/三张导致净负
     if(st==='curry' && S.curryUsed<2){ const t=curryReorgMove(seat); if(t){ S.curryUsed++; commitMove(seat,t); return; } }
     if(st==='harden' && !S.hardenUsed && mv){ const m2=hardenPick(seat,mv); if(m2){ G._noAdvance=true; commitMove(seat,mv); S.hardenUsed=true; commitMove(seat,m2); return; } }
+    // v1.5 扬尼斯·字母轰炸：v1.4「领出点数+3」已废弃（Δ仅+1.25，点数强化不改变手牌数量）。新机制见 commitMove 收牌分支（赢得出牌权后弃一张）
     if(mv){ commitMove(seat,mv); return; }
     applyMove(seat,null); return;
   } else { // ---------- 跟牌 ----------
     if(st==='lebron' && !S.lebronUsed && prev.type==='single' && G.passes>=1){ G.players[seat].hand=G.players[seat].hand.concat([prev.cards[0]]); G.lastMove=null; G.passes=0; S.lebronUsed=true; log(`👑 ${G.players[seat].name}·加冕：截下 ${LABEL[prev.cards[0].v]} 并领出`); const a2=genAllForSeat(seat); const m2=(seat===0)?strongPick(seat,a2,null):aiChoose(seat,null); if(m2) commitMove(seat,m2); else applyMove(seat,null); return; }
+    // v1.1 扩库·主动效果（跟牌）：米切尔冻结 / 魔术师传牌 / 爱德华兹合成对压
+    if(st==='mitchell' && !S.mitchellUsed){ const foes=oppAll(seat).filter(s=>G.players[s].hand.length>0 && G.players[s].hand.length<=10); if(foes.length){ const f=foes[0]; G.ss[f].frozen=true; S.mitchellUsed=true; log(`🧊 ${G.players[seat].name}·关键先生：冻结 ${G.players[f].name} 下一回合`); } }
+    if(st==='magic' && !S.magicUsed && hand.length<=10){ const foes=oppAll(seat).filter(s=>G.players[s].hand.length>0); if(foes.length){ const f=foes.sort((a,b)=>G.players[a].hand.length-G.players[b].hand.length)[0]; const give=worstCardOf(hand); if(give){ G.players[seat].hand=hand.filter(c=>c.id!==give.id); G.players[f].hand=G.players[f].hand.concat([give]); S.magicUsed=true; log(`🎩 ${G.players[seat].name}·showtime：把 ${LABEL[give.v]} 传给 ${G.players[f].name}`); } } }
+    // v1.3 爱德华兹·三分暴雨：合成对跟牌逻辑已移除（改点数+2强化，下方统一处理）
     const mv=(seat===0)? strongPick(seat, genBeatingForSeat(seat,prev), prev) : aiChoose(seat, prev);
     if(mv){ commitMove(seat,mv); return; }
     applyMove(seat,null); return;
@@ -910,6 +953,7 @@ function postMoveSkills(seat,mv){
   if(mv.type==='pair'||mv.type==='double') S.pairs += (mv.type==='double'? mv.len : 1);
   if(G.star[seat]==='doncic'){ S.types.add(mv.type); doncicMaybeCopy(seat); }
   if(G.star[seat]==='nowitzki'){ nowitzkiMaybeDiscard(seat); }
+  // v1.3 坎宁安·组织发动机已重做：触发逻辑移至 commitMove 的"收牌回合"（见 G.passes>=2 块），无跳过代价、每局最多2次
 }
 
 function nextTurn(){
@@ -936,7 +980,14 @@ function commitMove(seat,mv){
       const W=oppAll(seat).find(s=>G.star[s]==="wembanyama" && !G.ss[s].wembyUsed && isFoe(s,seat));
       if(W!==undefined){ G.ss[W].wembyUsed=true; log(`🚫 ${G.players[W].name}·遮天蔽日：抵消 ${G.players[seat].name} 的${mv.type==="rocket"?"王炸":"炸弹"}`); commitMove(seat,null); return; }
     }
+    // v1.2 伦纳德·死亡缠绕：原「对手炸弹截取」触发率≈0（炸弹太稀有），已重做为下方「压住对手截牌」（见 victim 计算后）
+
     const victim=G.lastSeat;                                   // 被本手压制的上家（领出者）
+    // v1.2 伦纳德·死亡缠绕（重做触发）：本座压住一名对手(foe) → 截取其最小牌 1 张入手（每局1次）
+    if(victim>=0 && G.star[seat]==="leonard" && isFoe(seat,victim) && !G.ss[seat].leonardUsed){
+      const vh=G.players[victim].hand;
+      if(vh.length){ const vSorted=vh.slice().sort((a,b)=>b.v-a.v); const take=vSorted.find(c=>c.v<16) || vSorted[0]; G.players[victim].hand=vh.filter(c=>c.id!==take.id); G.players[seat].hand=G.players[seat].hand.concat([take]); G.ss[seat].leonardUsed=true; log(`🕷 ${G.players[seat].name}·死亡缠绕：截取 ${G.players[victim].name} 的 ${LABEL[take.v]} 入手`); }
+    }
     const ids=new Set(mv.cards.map(c=>c.id));
     // 杜兰特·死神降临：记录本手是否含打出前最大牌（用于被压时标记重夺）
     const handBefore=G.players[seat].hand;
@@ -946,13 +997,49 @@ function commitMove(seat,mv){
     G.players[seat].hand=handBefore.filter(c=>!ids.has(c.id));
     seenAdd(mv.cards);                                   // v0.7：AI 记牌器
     G.lastMove=mv; G.lastSeat=seat; G.passes=0;
+    if(mv._bird) G.ss[seat].birdUsed=true;
+    if(mv._wade) G.ss[seat].wadeUsed=true;
+    // v1.3 爱德华兹·三分暴雨：本手结束后额外清掉最小牌（每局最多3次），相当于免费多弃一张
+    if(G.star[seat]==="edwards" && G.ss[seat].edwardsBoost<3 && G.players[seat].hand.length>0){
+      const eh=G.players[seat].hand; const ew=worstCardOf(eh);
+      G.players[seat].hand=eh.filter(c=>c.id!==ew.id); G.ss[seat].edwardsBoost++;
+      log(`🎯 ${G.players[seat].name}·三分暴雨：额外清掉 ${LABEL[ew.v]}`);
+    }
+    // v1.3 爱德华兹·三分暴雨：已移除"额外清牌"惩罚（净负），合成对改为不限次跟牌使用（见 autoPlaySeat 跟牌分支）
     setBubble(seat, moveName(mv));
     log(`${G.players[seat].name} 出 ${moveName(mv)}`, seat===0);
     if(mv.type==="bomb"||mv.type==="rocket"){G.mult*=2; G.bombCount++; log(`💥 炸弹/火箭！倍数 ×${G.mult}`); if(seat===0)G.bombPlayed=true;}
+    // v1.5 贾巴尔·天勾无解：单张当对子打出时计数（用于仿真触发率统计）
+    if(mv._kareem && G.star[seat]==="kareem"){ G.ss[seat].kareemUsed=true; log(`🏀 ${G.players[seat].name}·天勾无解：单张 ${LABEL[mv.cards[0].v]} 化对压上`); }
     // 亚历山大·造犯规：本座领出被对手压 → 压人者+1犯规
     if(victim>=0 && G.star[victim]==="alexander" && isFoe(seat,victim)){ G.ss[victim].foul[seat]=(G.ss[victim].foul[seat]||0)+1; }
+    // v1.6 扬尼斯·字母轰炸（被动·重做）：本座出牌被对手压 → 造犯规 +1；累计满 4 点弃一张最小牌并清零
+    if(victim>=0 && G.star[victim]==="giannis" && isFoe(seat,victim)){
+      const GSy=G.ss[victim]; GSy.gFoul=(GSy.gFoul||0)+1;
+      if(GSy.gFoul>=4){
+        GSy.gFoul=0; GSy.giannisUsed=true;
+        const gh2=G.players[victim].hand;
+        if(gh2.length){
+          const gw2=worstCardOf(gh2); G.players[victim].hand=gh2.filter(c=>c.id!==gw2.id);
+          log(`💥 ${G.players[victim].name}·字母轰炸：造犯规满 4 点，弃掉 ${LABEL[gw2.v]} 并清零`);
+          if(G.players[victim].hand.length===0){ endGame(victim); return; }
+        }
+      } else {
+        log(`💥 ${G.players[victim].name}·字母轰炸：造犯规 ${GSy.gFoul}/4`);
+      }
+    }
     // 杜兰特·死神降临：本座上次打出含最大牌且被压 → 标记可重夺
     if(victim>=0 && G.star[victim]==="durant" && !G.ss[victim].durantUsed && G.ss[victim]._lastHadMax){ G.ss[victim].retakeReady=true; }
+    // v1.1 加内特·铁血全能：被压时随机补一张≤K牌并弃最小牌（1局2次）
+    if(victim>=0 && G.star[victim]==="kg" && G.ss[victim].kgUsed<2 && isFoe(seat,victim)){
+      G.ss[victim].kgUsed++;
+      const kgr=G.players[victim];
+      const nv=3+Math.floor(Math.random()*11);   // 3..13 (≤K)
+      const newCard={id:'KG'+(++CARD_SEQ), v:nv, s:SUITS[Math.floor(Math.random()*4)], red:false, label:LABEL[nv]};
+      kgr.hand.push(newCard);
+      const w=worstCardOf(kgr.hand); kgr.hand=kgr.hand.filter(c=>c.id!==w.id);
+      log(`🏀 ${G.players[victim].name}·铁血全能：被压补 ${LABEL[nv]} 弃 ${LABEL[w.v]}`);
+    }
     postMoveSkills(seat,mv);
   } else {
     G.passes++;
@@ -962,8 +1049,17 @@ function commitMove(seat,mv){
   renderAll();
   if(G.players[seat].hand.length===0){ endGame(seat); return; }
   if(G.passes>=2){
+    // v1.4 贾巴尔被动免疫已移除，无需重置
     let lead=G.lastSeat;
+    // v1.3 坎宁安·组织发动机（重做平衡）：本座收牌（三家均pass、赢得该回合）时清掉最小牌，每局最多3次（无跳过代价）
+    if(G.star[lead]==='cunningham' && G.ss[lead].cunninghamCount<3 && G.players[lead].hand.length>0){
+      const ch=G.players[lead].hand; const cw=worstCardOf(ch);
+      G.players[lead].hand=ch.filter(c=>c.id!==cw.id); G.ss[lead].cunninghamCount++;
+      log(`🔋 ${G.players[lead].name}·组织发动机：收牌回合清掉最小牌 ${LABEL[cw.v]}（${G.ss[lead].cunninghamCount}/3）`);
+      if(G.players[lead].hand.length===0){ endGame(lead); return; }
+    }
     if(G.forcedLead>=0){ log(`🏀 詹姆斯·传球组织：强制 ${G.players[G.forcedLead].name} 先手`); lead=G.forcedLead; G.forcedLead=-1; }
+    // v1.6 扬尼斯·字母轰炸：旧「收牌后弃牌」已废弃（与坎宁安机制重叠），新机制见 commitMove 被压分支（造犯规满4点弃一张并清零）
     G.turn=lead; G.lastMove=null; G.passes=0; setPhaseTxt(`${G.players[lead].name} 获得自由出牌`);
   }
   else { G.turn=(seat+1)%3; }
@@ -1237,7 +1333,31 @@ function stopMatchClock(){ if(G.clockId){clearInterval(G.clockId);G.clockId=null
 function setActiveSeat(s){[0,1,2].forEach(x=>document.getElementById("seat"+x).classList.toggle("active",x===s));}
 function setBubble(s,t){document.getElementById("bub"+s).textContent=t;}
 function setPhaseTxt(t){document.getElementById("phaseTxt").textContent=t;}
-function renderAll(){renderHands();renderCounts();renderLast();renderMult();renderClock();renderSkillStatus();}
+function renderAll(){renderHands();renderCounts();renderLast();renderMult();renderClock();renderSkillStatus();renderFoulBars();}
+/* ---- v1.6 犯规条 UI：仅字母哥/亚历山大显示，平行四边形四格蓄力条 ---- */
+function foulBarState(seat){
+  const st=G.star[seat], S=G.ss[seat]; if(!st||!S) return -1;
+  if(st==='giannis') return Math.min(4, S.gFoul||0);
+  if(st==='alexander'){ let m=0; Object.keys(S.foul||{}).forEach(function(k){ if(!S.drawn[k]) m=Math.max(m, Math.min(4, S.foul[k]||0)); }); return m; }
+  return -1;
+}
+function renderFoulBars(){
+  for(let s=0;s<3;s++){
+    const seatEl=document.getElementById("seat"+s); if(!seatEl) continue;
+    let row=document.getElementById("foulrow"+s);
+    if(!row){ row=document.createElement("div"); row.className="foulrow"; row.id="foulrow"+s;
+      const nm=seatEl.querySelector(".nm");
+      if(nm&&nm.nextSibling) seatEl.insertBefore(row,nm.nextSibling); else seatEl.appendChild(row); }
+    const n=foulBarState(s);
+    if(n<0){ if(row.style.display!=="none") row.style.display="none"; continue; }
+    row.style.display="flex";
+    const label = (G.star[s]==='giannis')?'字母轰炸':'造犯规';
+    let hb='<span class="foultxt">'+label+'</span><span class="foulbar'+(n>=4?' full':'')+'">';
+    for(let i=0;i<4;i++) hb+='<span class="fb'+(i<n?' on':'')+'"></span>';
+    hb+='</span><span class="foultxt">'+(n>=4?'满':(n+'/4'))+'</span>';
+    if(row.innerHTML!==hb) row.innerHTML=hb;
+  }
+}
 function renderSkillStatus(){
   const el=document.getElementById("skillTxt"); if(!el) return;
   if(!G.star[0]){el.textContent="";return;}
@@ -1248,6 +1368,7 @@ function renderSkillStatus(){
   else if(st.key==="lebron") used=S.lebronUsed?"已用 · 一局一次":"可用 · 一局一次";
   else if(st.key==="doncic") used=S.doncicUsed?"已触发":"待命（打出3+牌型触发）";
   else if(st.key==="duncan") used="免疫（无上限）";
+  else if(st.key==="giannis") used=`造犯规 ${S.gFoul||0}/4 · ${S.giannisUsed?'已发动':'待发动'}`;
   else if(st.key==="alexander"){ const f=Object.values(S.foul).reduce((a,b)=>a+b,0); used=`犯规累计 ${f} · 抽取${Object.keys(S.drawn).length}次`; }
   else if(st.key==="jordan"){ const wcs=G.players[0].hand.filter(c=>(S.wildIds||[]).includes(c.id)); used=wcs.length?`万能牌：${wcs.map(c=>LABEL[c.v]||c.label).join("、")}（点击无效，开局已指定）`:"未指定"; }
   else if(st.key==="kidd") used="视野常驻";
@@ -1325,7 +1446,18 @@ function renderLast(){
     k.style.cursor="default";
     k.innerHTML=cardHTML(c);
     el.appendChild(k);
-  });}
+  });
+    // v1.5 贾巴尔·天勾无解：单张化对 —— 补一张同点数幻影牌，黄色光圈 + "补"角标注明非真实手牌
+    if(G.lastMove._kareem && G.lastMove.type==="pair" && G.lastMove.cards.length===1){
+      const src=G.lastMove.cards[0];
+      const sk=document.createElement("div");
+      sk.className="card phantom synth"+(src.red?" red":"");
+      sk.style.cursor="default";
+      sk.title="天勾无解·补全牌（技能生成，非真实手牌）";
+      sk.innerHTML=cardHTML({v:src.v, label:src.label, s:"", red:src.red});
+      el.appendChild(sk);
+    }
+  }
 }
 function renderMult(){document.getElementById("multTxt").textContent="倍数 ×"+G.mult;}
 function renderClock(){const m=Math.floor(G.elapsed/60),s=G.elapsed%60;document.getElementById("clockTxt").textContent="本局 "+m+":"+(s<10?"0":"")+s;}

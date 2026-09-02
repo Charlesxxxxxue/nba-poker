@@ -46,17 +46,33 @@
     nowitzki: { key: "nowitzki", name: "诺维斯基", skill: "金鸡独立", type: "passive", cd: "常驻(每累计2对触发)", desc: "本局累计打出两个对子后弃一张手牌加速清牌" },
     curry: { key: "curry", name: "库里", skill: "百步穿杨", type: "active", cd: "1局2次", desc: "对子当作三张打出（重组三连）" },
     lebron: { key: "lebron", name: "詹姆斯", skill: "加冕", type: "active", cd: "1局1次", desc: "截下一张无人能压的单牌并领出" },
-    jordan: { key: "jordan", name: "乔丹", skill: "神之一手", type: "active", cd: "每局指定" + JORDAN_WILDS + "张", desc: "开局主动指定" + JORDAN_WILDS + "张手牌为万能牌（可变2–A任意牌，不可当王）" }
+    jordan: { key: "jordan", name: "乔丹", skill: "神之一手", type: "active", cd: "每局指定" + JORDAN_WILDS + "张", desc: "开局主动指定" + JORDAN_WILDS + "张手牌为万能牌（可变2–A任意牌，不可当王）" },
+    // ===== 扩库 v1.1 · 已确认 10 人（现役5 + 退役5）=====
+    giannis: { key: "giannis", name: "字母哥", skill: "字母轰炸", type: "passive", cd: "常驻", desc: "被动：出牌被对手压→造犯规+1；累计满4点弃掉一张牌并清零" },
+    edwards: { key: "edwards", name: "爱德华兹", skill: "三分暴雨", type: "active", cd: "1局1次", desc: "合成一对打出，对子点数取两张中较小者" },
+    mitchell: { key: "mitchell", name: "米切尔", skill: "关键先生", type: "active", cd: "1局1次", desc: "对手≤10张时冻结其下一次出牌" },
+    cunningham: { key: "cunningham", name: "坎宁安", skill: "组织发动机", type: "passive", cd: "常驻", desc: "场上连续打出4个相同牌型时，可弃掉点数最小的一张牌（弹窗询问，8s倒计时）" },
+    leonard: { key: "leonard", name: "伦纳德", skill: "死亡缠绕", type: "passive", cd: "常驻", desc: "对手打出非王炸炸弹时，可选1-3张加入手牌" },
+    kareem: { key: "kareem", name: "贾巴尔", skill: "天勾无解", type: "passive", cd: "常驻", desc: "被动：压牌时你的单张可当作对子使用" },
+    magic: { key: "magic", name: "魔术师", skill: "showtime", type: "active", cd: "1局1次", desc: "手牌≤10张时，可选把任意一张手牌送给另两玩家中的0/1/2人" },
+    bird: { key: "bird", name: "伯德", skill: "致命三分", type: "passive", cd: "常驻", desc: "三带牌型可带两张不同点单张（三带二不变）" },
+    kg: { key: "kg", name: "加内特", skill: "铁血全能", type: "reactive", cd: "1局2次", desc: "被压时随机获得一张≤K的牌，并选择弃掉一张" },
+    wade: { key: "wade", name: "韦德", skill: "闪电突破", type: "passive", cd: "常驻", desc: "点数≤10的单牌默认+1" }
   };
   const STAR_IMG = {
-    jokic: "star_cards/A_jokic_hearthstone.png", wembanyama: "star_cards/A_wembanyama_hearthstone.png",
-    alexander: "star_cards/A_alexander_hearthstone.png", brunson: "star_cards/A_brunson_hearthstone.png",
-    durant: "star_cards/A_durant_hearthstone.png", harden: "star_cards/A_harden_hearthstone.png",
-    doncic: "star_cards/A_doncic_hearthstone.png", kobe: "star_cards/A_kobe_hearthstone.png",
-    duncan: "star_cards/A_duncan_hearthstone.png", oNeal: "star_cards/A_oNeal_hearthstone.png",
-    kidd: "star_cards/A_kidd_hearthstone.png", nowitzki: "star_cards/A_nowitzki_hearthstone.png",
-    curry: "star_cards/A_curry_hearthstone.png", lebron: "star_cards/A_lebron_hearthstone.png",
-    jordan: "star_cards/A_jordan_hearthstone.png"
+    jokic: "star_cards/A_jokic_hearthstone.jpg", wembanyama: "star_cards/A_wembanyama_hearthstone.jpg",
+    alexander: "star_cards/A_alexander_hearthstone.jpg", brunson: "star_cards/A_brunson_hearthstone.jpg",
+    durant: "star_cards/A_durant_hearthstone.jpg", harden: "star_cards/A_harden_hearthstone.jpg",
+    doncic: "star_cards/A_doncic_hearthstone.jpg", kobe: "star_cards/A_kobe_hearthstone.jpg",
+    duncan: "star_cards/A_duncan_hearthstone.jpg", oNeal: "star_cards/A_oNeal_hearthstone.jpg",
+    kidd: "star_cards/A_kidd_hearthstone.jpg", nowitzki: "star_cards/A_nowitzki_hearthstone.jpg",
+    curry: "star_cards/A_curry_hearthstone.jpg", lebron: "star_cards/A_lebron_hearthstone.jpg",
+    jordan: "star_cards/A_jordan_hearthstone.jpg",
+    giannis: "star_cards/A_giannis_hearthstone.png", edwards: "star_cards/A_edwards_hearthstone.png",
+    mitchell: "star_cards/A_mitchell_hearthstone.png", cunningham: "star_cards/A_cunningham_hearthstone.png",
+    leonard: "star_cards/A_leonard_hearthstone.png", kareem: "star_cards/A_kareem_hearthstone.png",
+    magic: "star_cards/A_magic_hearthstone.png", bird: "star_cards/A_bird_hearthstone.png",
+    kg: "star_cards/A_kg_hearthstone.png", wade: "star_cards/A_wade_hearthstone.png"
   };
 
   /* ---------- 牌组 ---------- */
@@ -94,7 +110,16 @@
     if (n === 2 && ranks.length === 1) return { type: "pair", rank: ranks[0], len: 1, cards };
     if (n === 3 && ranks.length === 1) return { type: "triple", rank: ranks[0], len: 1, cards };
     if (n === 4) { const t = ranks.find(r => counts[r] === 3); if (t !== undefined) return { type: "triple1", rank: t, len: 1, cards }; return null; }
-    if (n === 5) { const t = ranks.find(r => counts[r] === 3), p = ranks.find(r => counts[r] === 2); if (t !== undefined && p !== undefined && t !== p) return { type: "triple2", rank: t, len: 1, cards }; }
+    if (n === 5) {
+      const t = ranks.find(r => counts[r] === 3);
+      if (t !== undefined) {
+        const others = ranks.filter(r => r !== t);
+        // 伯德·致命三分：三带两单（两张不同点单张，非对子）
+        if (others.length === 2 && counts[others[0]] === 1 && counts[others[1]] === 1 && others[0] !== others[1]) return { type: "triple1s", rank: t, len: 1, cards };
+        const p = ranks.find(r => counts[r] === 2);
+        if (p !== undefined && p !== t) return { type: "triple2", rank: t, len: 1, cards };
+      }
+    }
     if (n >= 5 && ranks.length === n && isConsec(ranks) && ranks[ranks.length - 1] <= 14) return { type: "straight", rank: ranks[ranks.length - 1], len: n, cards };
     if (n >= 6 && n % 2 === 0 && ranks.length === n / 2 && ranks.every(r => counts[r] === 2) && isConsec(ranks) && ranks[ranks.length - 1] <= 14) return { type: "double", rank: ranks[ranks.length - 1], len: n / 2, cards };
     const tripleRanks = ranks.filter(r => counts[r] >= 3 && r <= 14).sort((a, b) => a - b);
@@ -108,6 +133,7 @@
     if (mv.type === "rocket") return true;
     if (mv.type === "bomb") { if (prev.type === "rocket") return false; if (prev.type === "bomb") return mv.rank > prev.rank; return true; }
     if (prev.type === "bomb" || prev.type === "rocket") return false;
+    if (prev.type === "triple1s") { if (mv.type !== "triple1s") return false; return mv.rank > prev.rank; }
     return mv.type === prev.type && mv.len === prev.len && mv.rank > prev.rank;
   }
   // 万能牌解析：给定物理牌（含万能牌）与「每张万能牌→代表点数」映射，返回带替点 rank 的走法；cards 仍是原始物理牌引用
@@ -150,6 +176,7 @@
     else if (prev.type === "triple") { vals.forEach(v => { if (v > prev.rank && g[v].length >= 3) out.push({ type: "triple", rank: v, len: 1, cards: g[v].slice(0, 3) }); }); }
     else if (prev.type === "triple1") { vals.forEach(v => { if (v > prev.rank && g[v].length >= 3) { const o = vals.find(x => x !== v && g[x].length >= 1); if (o !== undefined) out.push({ type: "triple1", rank: v, len: 1, cards: g[v].slice(0, 3).concat(g[o][0]) }); } }); }
     else if (prev.type === "triple2") { vals.forEach(v => { if (v > prev.rank && g[v].length >= 3) { const o = vals.find(x => x !== v && g[x].length >= 2); if (o !== undefined) out.push({ type: "triple2", rank: v, len: 1, cards: g[v].slice(0, 3).concat(g[o].slice(0, 2)) }); } }); }
+    else if (prev.type === "triple1s") { vals.forEach(v => { if (v > prev.rank && g[v].length >= 3) { const rest = vals.filter(o => o !== v); for (let i = 0; i < rest.length; i++) for (let j = i + 1; j < rest.length; j++) { const o1 = rest[i], o2 = rest[j]; if (o1 !== o2 && g[o1].length >= 1 && g[o2].length >= 1) out.push({ type: "triple1s", rank: v, len: 1, cards: g[v].slice(0, 3).concat([g[o1][0], g[o2][0]]) }); } } }); }
     else if (prev.type === "straight") { for (let s = 3; s + prev.len - 1 <= 14; s++) { if (s + prev.len - 1 <= prev.rank) continue; let ok = true; const cs = []; for (let k = 0; k < prev.len; k++) { if (!g[s + k]) { ok = false; break; } cs.push(g[s + k][0]); } if (ok) out.push({ type: "straight", rank: s + prev.len - 1, len: prev.len, cards: cs }); } }
     else if (prev.type === "double") { for (let s = 3; s + prev.len - 1 <= 14; s++) { if (s + prev.len - 1 <= prev.rank) continue; let ok = true; const cs = []; for (let k = 0; k < prev.len; k++) { if (!g[s + k] || g[s + k].length < 2) { ok = false; break; } cs.push(g[s + k][0], g[s + k][1]); } if (ok) out.push({ type: "double", rank: s + prev.len - 1, len: prev.len, cards: cs }); } }
     else if (prev.type === "airplane" || prev.type === "airplane1" || prev.type === "airplane2") { /* AI 简化：略过飞机跟牌 */ }
