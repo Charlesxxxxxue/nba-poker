@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>NBA Poker · 可玩原型 v1.6（25 星卡池 + 犯规蓄力条 + 补全卡）</title>
+<title>NBA Poker · 可玩原型 v1.6 · 卡面 v0.7（25 星油画肖像 · 无水印）</title>
 <style>
   :root{
     --bg:#04060e; --ambient:radial-gradient(130% 80% at 50% -12%, rgba(10,132,255,.26), transparent 60%);
@@ -195,23 +195,47 @@
   .ovStats .srow b{color:var(--accent);font-weight:700}
   .ovStats .srow .win{color:#5be38a}
   .ovStats .srow .lose{color:#ff8a8a}
-  /* ===== 技能简介弹窗（v0.7.6） ===== */
+  /* ===== 技能简介弹窗（v0.8 · 一个球员一行 · 可滑动下拉列表） ===== */
   .skillModal{position:absolute;inset:0;background:rgba(4,8,16,.78);display:none;align-items:center;justify-content:center;z-index:40;padding:16px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
   .skillModal.on{display:flex;animation:ovIn .28s ease}
-  .skillModalBox{width:100%;max-width:680px;max-height:84vh;display:flex;flex-direction:column;background:var(--glass);border:1px solid var(--glass-bd);border-radius:var(--radius);box-shadow:var(--shadow);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);overflow:hidden}
-  .skillModalHead{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--glass-bd);font-size:16px;font-weight:700;color:var(--accent)}
-  .skillGrid{overflow:auto;padding:14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
-  .skillCard{background:var(--glass-2);border:1px solid var(--glass-bd);border-radius:var(--radius-sm);padding:10px 12px;cursor:default;transition:transform .12s,box-shadow .2s}
-  .skillCard:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(10,132,255,.25)}
-  .skillCard .sn{font-size:15px;font-weight:800;color:var(--txt)}
-  .skillCard .ss{font-size:13px;font-weight:700;color:var(--accent);margin:2px 0 6px}
-  .skillCard .st{display:inline-block;font-size:10px;color:var(--dim);border:1px solid var(--glass-bd);border-radius:980px;padding:1px 8px;margin-bottom:6px}
-  .skillCard .sd{font-size:12px;color:var(--dim);line-height:1.5}
+  .skillModalBox{width:100%;max-width:620px;max-height:84vh;display:flex;flex-direction:column;background:var(--glass);border:1px solid var(--glass-bd);border-radius:var(--radius);box-shadow:var(--shadow);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);overflow:hidden}
+  .skillModalHead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-bottom:1px solid var(--glass-bd);font-size:16px;font-weight:700;color:var(--accent)}
+  .skillModalHead .hdTools{display:flex;align-items:center;gap:8px}
+  .skillModalHead .hdCnt{font-size:11px;color:var(--dim);font-weight:600}
+  /* 可滑动列表主体 */
+  .skillList{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:6px 10px 12px}
+  .skillList::-webkit-scrollbar{width:8px}
+  .skillList::-webkit-scrollbar-thumb{background:rgba(255,255,255,.16);border-radius:8px}
+  .skillList::-webkit-scrollbar-track{background:transparent}
+  /* 一行 = 一个球员 */
+  .skillRow{border-bottom:1px solid rgba(255,255,255,.06)}
+  .skillRow:last-child{border-bottom:none}
+  .skillRowHead{display:flex;align-items:center;gap:9px;padding:9px 6px;cursor:pointer;border-radius:6px;transition:background .15s}
+  .skillRowHead:hover{background:rgba(255,255,255,.055)}
+  .skillRow.on .skillRowHead{background:rgba(255,200,61,.10)}
+  .skillIdx{flex:none;width:20px;font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums;text-align:right}
+  .skillAv{flex:none;width:34px;height:34px;border-radius:6px;object-fit:cover;border:1px solid var(--glass-bd);background:rgba(0,0,0,.25)}
+  .skillNm{flex:none;font-size:14px;font-weight:800;color:var(--txt);min-width:62px}
+  .skillSk{flex:1;min-width:0;font-size:13px;font-weight:700;color:var(--accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .skillTy{flex:none;font-size:10px;font-weight:700;border-radius:980px;padding:2px 7px;border:1px solid;white-space:nowrap}
+  .skillTy.active{color:#ffd166;border-color:rgba(255,209,102,.45);background:rgba(255,209,102,.10)}
+  .skillTy.passive{color:#7cc4ff;border-color:rgba(124,196,255,.45);background:rgba(124,196,255,.10)}
+  .skillTy.reactive{color:#ff9db1;border-color:rgba(255,157,177,.45);background:rgba(255,157,177,.10)}
+  .skillTy.mixed{color:#b79dff;border-color:rgba(183,157,255,.45);background:rgba(183,157,255,.10)}
+  .skillCd{flex:none;font-size:10px;color:var(--dim);white-space:nowrap}
+  .skillAr{flex:none;font-size:10px;color:var(--dim);transition:transform .2s}
+  .skillRow.on .skillAr{transform:rotate(90deg);color:var(--accent)}
+  /* 下拉展开区 */
+  .skillBody{display:none;padding:2px 8px 12px 30px}
+  .skillRow.on .skillBody{display:block;animation:ovIn .18s ease}
+  .skillBody .bd{font-size:12.5px;color:#cfd8e3;line-height:1.75;border-left:2px solid rgba(255,200,61,.5);padding-left:10px}
+  .skillBody .meta{margin-top:6px;padding-left:12px;font-size:10.5px;color:var(--dim)}
+  @media (max-width:560px){ .skillNm{min-width:52px;font-size:13px} .skillCd{display:none} }
 </style>
 </head>
 <body>
   <div class="topbar">
-    <div><b>NBA POKER</b> · 可玩原型 <b>v1.6</b> <span class="pill">｜25 星卡池 ｜ 标准叫分制 ｜ 农民 2打1 协作 ｜ AI 升级 ｜ 计时遥测</span></div>
+    <div><b>NBA POKER</b> · 可玩原型 <b>v1.6</b> · 卡面 <b>v0.7</b> <span class="pill">｜25 星卡池 ｜ 标准叫分制 ｜ 农民 2打1 协作 ｜ AI 升级 ｜ 计时遥测</span></div>
     <button class="mini" id="minBtn">▽ 最小化</button>
     <button class="mini" id="skillIntroBtn">📖 技能简介</button>
     <button class="mini" id="muteBtn">🔊</button>
@@ -255,8 +279,15 @@
 
     <div class="skillModal" id="skillModal">
       <div class="skillModalBox">
-        <div class="skillModalHead"><b>📖 球星技能简介</b><button class="mini" id="skillModalClose">✕ 关闭</button></div>
-        <div class="skillGrid" id="skillGrid"></div>
+        <div class="skillModalHead">
+          <b>📖 球星技能简介</b>
+          <div class="hdTools">
+            <span class="hdCnt" id="skillCount"></span>
+            <button class="mini" id="skillExpandAll">展开全部</button>
+            <button class="mini" id="skillModalClose">✕ 关闭</button>
+          </div>
+        </div>
+        <div class="skillList" id="skillList"></div>
       </div>
     </div>
   </div>
@@ -1525,14 +1556,56 @@ document.getElementById("minBtn").onclick=()=>{
 };
 document.getElementById("teleBtn").onclick=showTelemetry;
 document.getElementById("muteBtn").onclick=()=>{ SFX.muted=!SFX.muted; document.getElementById("muteBtn").textContent=SFX.muted?"🔇":"🔊"; if(!SFX.muted){ SFX.ac(); SFX.select(); } };
-/* v0.7.6 技能简介弹窗：从全局 STARS（rules.js 提供）构建全部球星卡片 */
+/* v0.8 技能简介弹窗：一个球员一行 · 可滑动下拉列表（正文取 descFull 完整一句话，缺失时回退短版 desc） */
 (function buildSkillIntro(){
-  const grid=document.getElementById("skillGrid");
-  if(!grid) return;
+  const list=document.getElementById("skillList");
+  if(!list) return;
   const stars=(typeof STARS!=="undefined"&&STARS)||window.STARS||{};
-  grid.innerHTML=Object.keys(stars).map(k=>{const s=stars[k];
-    return `<div class="skillCard"><div class="sn">${s.name}</div><div class="ss">${s.skill}</div><span class="st">${s.type}</span><div class="sd">${s.desc}</div></div>`;
+  const imgs=(typeof STAR_IMG!=="undefined"&&STAR_IMG)||window.STAR_IMG||{};
+  const TYPE_LABEL={active:"主动",passive:"被动",reactive:"响应","passive+active":"被动+主动"};
+  const TYPE_CLS={active:"active",passive:"passive",reactive:"reactive","passive+active":"mixed"};
+  const keys=Object.keys(stars);
+  list.innerHTML=keys.map((k,i)=>{const s=stars[k];
+    const ty=s.type||"passive";
+    const av=imgs[k]?`<img class="skillAv" src="${imgs[k]}" alt="" loading="lazy">`:"";
+    return `<div class="skillRow" data-k="${k}">
+      <div class="skillRowHead">
+        <span class="skillIdx">${i+1}</span>${av}
+        <span class="skillNm">${s.name}</span>
+        <span class="skillSk">${s.skill}</span>
+        <span class="skillTy ${TYPE_CLS[ty]||"passive"}">${TYPE_LABEL[ty]||ty}</span>
+        <span class="skillCd">${s.cd||""}</span>
+        <span class="skillAr">▶</span>
+      </div>
+      <div class="skillBody">
+        <div class="bd">${s.descFull||s.desc||""}</div>
+        <div class="meta">技能类型：${TYPE_LABEL[ty]||ty} ｜ 触发限制：${s.cd||"—"}</div>
+      </div>
+    </div>`;
   }).join("");
+  const cnt=document.getElementById("skillCount");
+  if(cnt) cnt.textContent=keys.length+" 位球星";
+  const btn=document.getElementById("skillExpandAll");
+  const rows=()=>list.querySelectorAll(".skillRow");
+  function syncExpandBtn(){
+    if(!btn) return;
+    const total=rows().length, on=list.querySelectorAll(".skillRow.on").length;
+    btn.textContent=(total&&on>=total)?"收起全部":"展开全部";
+  }
+  // 点击任意一行 → 下拉展开/收起该球员完整技能说明
+  list.addEventListener("click",(e)=>{
+    const head=e.target.closest(".skillRowHead");
+    if(!head) return;
+    head.parentElement.classList.toggle("on");
+    syncExpandBtn();
+  });
+  if(btn) btn.onclick=()=>{
+    const all=rows(), total=all.length, on=list.querySelectorAll(".skillRow.on").length;
+    const expand=!(total&&on>=total);
+    all.forEach(r=>r.classList.toggle("on",expand));
+    syncExpandBtn();
+  };
+  syncExpandBtn();
 })();
 document.getElementById("skillIntroBtn").onclick=()=>document.getElementById("skillModal").classList.add("on");
 document.getElementById("skillModalClose").onclick=()=>document.getElementById("skillModal").classList.remove("on");
