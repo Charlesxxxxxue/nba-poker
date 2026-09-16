@@ -3,7 +3,7 @@
 <head data-page-node-id="D6OXVWtNQzfFHEl8yeZeEv">
 <meta charset="UTF-8" data-page-node-id="GqUavfoCHzaA4SQOFX9HJY">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" data-page-node-id="HLbLnKHQUaZq0cvHfzMR8X">
-<title>NBA Poker · 可玩原型 v1.9 · 卡面 v0.7（25 星油画肖像 · 无水印）</title>
+<title>NBA Poker · 可玩原型 v1.9.1 · 卡面 v0.7（25 星油画肖像 · 无水印）</title>
 <style>
   :root{
     --bg:#04060e; --ambient:radial-gradient(130% 80% at 50% -12%, rgba(10,132,255,.26), transparent 60%);
@@ -385,7 +385,7 @@
 </head>
 <body data-page-node-id="6hdDJl0xpRS5EK2ETUs6LA">
   <div class="topbar" data-page-node-id="ICFu3aC2YrRYewiiDXPHcz">
-    <div data-page-node-id="xCuiWjasILiAngVsuSvITd"><b data-page-node-id="bjjV5UeT1fEn2t9a7BWEd8">NBA POKER</b> · 可玩原型 <b data-page-node-id="HcTMevaBKC0aZX9hmWQdFe">v1.9</b> · 卡面 <b data-page-node-id="DNXWe0lfB2iZi7Ud28ul1I">v0.7</b> <span class="pill" data-page-node-id="JmEb1LyuwGaKbcPI31kENW">｜25 星卡池 ｜ 标准叫分制 ｜ 农民 2打1 协作</span></div>
+    <div data-page-node-id="xCuiWjasILiAngVsuSvITd"><b data-page-node-id="bjjV5UeT1fEn2t9a7BWEd8">NBA POKER</b> · 可玩原型 <b data-page-node-id="HcTMevaBKC0aZX9hmWQdFe">v1.9.1</b> · 卡面 <b data-page-node-id="DNXWe0lfB2iZi7Ud28ul1I">v0.7</b> <span class="pill" data-page-node-id="JmEb1LyuwGaKbcPI31kENW">｜25 星卡池 ｜ 标准叫分制 ｜ 农民 2打1 协作</span></div>
     <button class="mini" id="minBtn" data-page-node-id="EySCTcVn0L1pkF0xgMMba8">▽<span class="btnTxt"> 最小化</span></button>
     <button class="mini" id="skillIntroBtn" data-page-node-id="ATxvLrXTIYvO6LVVtERSS4">📖<span class="btnTxt"> 技能简介</span></button>
     <button class="mini" id="muteBtn" data-page-node-id="WgivqBfEfWRumHUxwRZoFU">🔊</button>
@@ -933,6 +933,7 @@ function stepBid(){
     startCountdown(BID_SECONDS, ()=>{ flashHandTimeout("⏱ 超时 · 已自动不叫"); doBid(0,0); });
   } else {
     setBubble(seat, "思考中…");
+    renderWaitingControls(seat);                  // v1.9.1：叫分阶段同样清空，避免玩家重复点击叫分
     G.aiTimer=setTimeout(()=>{ const b=aiBid(G.players[seat].hand); doBid(seat, b>G.bidMax?b:0); },700);
   }
 }
@@ -992,6 +993,7 @@ function stepDouble(){
     startCountdown(BID_SECONDS, ()=>{ flashHandTimeout("⏱ 超时 · 已放弃加倍"); G.doubleDone=true; renderAll(); startPlay(); });
   } else {
     setBubble(seat,"思考加倍…");
+    renderWaitingControls(seat);                  // v1.9.1：加倍阶段同样清空
     G.aiTimer=setTimeout(()=>{
       if(aiDouble(seat)){G.mult*=2; setBubble(seat,"加倍"); log(`${G.players[seat].name} 加倍 → ×${G.mult}`);}
       else setBubble(seat,"不加倍");
@@ -1175,8 +1177,20 @@ function nextTurn(){
   if(seat===0) enableHumanTurn();
   else {
     setBubble(seat,"出牌中…");
+    renderWaitingControls(seat);                  // v1.9.1：清空操作区，避免残留上一阶段按钮被误点
     G.aiTimer=setTimeout(()=>{ autoPlaySeat(seat, G.lastMove); },800);
   }
+}
+/* v1.9.1 AI 回合占位提示：替换掉残留的叫分/选星按钮，显示「谁在思考」 */
+function renderWaitingControls(seat){
+  const c=document.getElementById("controls"); if(!c) return;
+  c.innerHTML="";
+  const nm=(G.players[seat]&&G.players[seat].name)||("AI 对手 "+seat);
+  const d=document.createElement("div");
+  d.className="waitingNote";
+  d.style.cssText="text-align:center;padding:12px 10px;font-size:14px;font-weight:700;letter-spacing:.4px;color:rgba(245,245,247,.70)";
+  d.textContent="⏳ "+nm+" 思考中…";
+  c.appendChild(d);
 }
 function applyMove(seat,mv){ commitMove(seat,mv); }
 function commitMove(seat,mv){
