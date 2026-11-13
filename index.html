@@ -187,6 +187,9 @@
   /* v0.7.5 打磨：卡面精致化 + 动效 */
   .card{overflow:hidden}
   .card .suit-bar{position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:8px 0 0 8px;z-index:1}
+   /* 图片牌面层：Object-fit fill 贴合 3:4 卡片；状态牌仍由各自背景色承接 */
+   .card .faceImg{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;display:block;border-radius:inherit;pointer-events:none;z-index:0}
+   .card.wild .faceImg{opacity:.94}
   .card.red .suit-bar{background:linear-gradient(180deg,#ff5a6e,#a50d21)}
   .card:not(.red) .suit-bar{background:linear-gradient(180deg,#46587c,#1c2740)}
   /* v1.7 花色红黑双色编码：手牌重叠时靠左侧色条即可分辨红黑（♠♣ 黑 / ♥♦ 红） */
@@ -312,10 +315,12 @@
     .controls{flex-direction:row;flex-wrap:wrap;gap:6px;padding:6px}
     .btn{flex:1 1 calc(50% - 6px);min-width:0;padding:13px 8px;font-size:14px}
     /* v1.7 选星卡改横排（图左文右），三行纵向排列，彻底不溢出 */
-    .btn.starPick{flex:1 1 100%;flex-direction:row;align-items:center;gap:10px;min-width:0;padding:8px 12px;text-align:left}
-    .starPick .spImg{width:56px;margin-bottom:0;flex:none}
-    .starPick .spInfo{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
-    .starPick .spSkill{font-size:13px}
+    .btn.starPick{flex:1 1 calc(33.333% - 4px);flex-direction:column;align-items:center;gap:3px;min-width:0;padding:8px 5px;text-align:center}
+    .starPick .spImg{width:100%;max-width:96px;margin-bottom:2px;flex:none}
+    .starPick .spInfo{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0;flex:none;text-align:center}
+    .starPick .spName b{font-size:14px}
+    .starPick .spSkill{font-size:11px;line-height:1.25}
+    .starPick .spType{font-size:10px;line-height:1.2}
     /* v1.7 叫分按钮一行四个，不再被压出屏底 */
     .btn.bidOpt{flex:1 1 calc(25% - 5px);padding:12px 2px;font-size:14px}
     .controls:has(.bidOpt){gap:5px}
@@ -1660,7 +1665,7 @@ function renderHands(){
   });
   renderHand();
 }
-/* v0.7.3 牌面：纯文字渲染（点数+花色符号），不再依赖 sample_cards 龙纹图片（SUIT_NAME/V_RANK → rules.js） */
+/* 牌面已恢复 sample_cards 龙纹图片；以下纯文字索引规则保留作降级样式（SUIT_NAME/V_RANK → rules.js） */
 function cardImageURL(c){
   if(c.v===17) return 'sample_cards/joker_big.jpg';
   if(c.v===16) return 'sample_cards/joker_small.jpg';
@@ -1671,13 +1676,9 @@ function cardImageURL(c){
 /* v1.7 花色红黑双色编码：♠♣ → 黑 / ♥♦ → 红（仅区分红黑，不做四色） */
 const SUIT_CODE={'♠':'sp','♥':'he','♣':'cl','♦':'di'};
 function cardHTML(c){
-  // v0.7.3 牌面：纯文字渲染（点数 .r + 花色角标 .s + 花色大标 .sc），字号改 CSS 即生效，不再依赖龙纹图片
-  if(c.v===17) return `<div class="jk">大王</div>`;
-  if(c.v===16) return `<div class="jk">小王</div>`;
-  const suit=c.s||"";
-  if(!suit) return `<div class="r2">${c.label}</div>`;   // 幻影牌（无花色）居中显示点数
-  const k=SUIT_CODE[suit]||"sp";
-  return `<div class="suit-bar sb-${k}"></div><div class="r">${c.label}</div><div class="s ${k}">${suit}</div><div class="sc ${k}">${suit}</div>`;
+  // 龙纹图片牌面（左上大点数+花色、右下镜像索引）；大小王用 Charles 指定的固定卡面
+  if(c.v===17||c.v===16||(c.s && SUIT_NAME[c.s])) return `<img class="faceImg" src="${cardImageURL(c)}" alt="" draggable="false" decoding="async">`;
+  return `<div class="r2">${c.label||""}</div>`;
 }
 /* v1.7 手牌自适应步长：牌少时几乎不重叠（花色全露），牌多时压缩但保证 ≥28px 可见宽度 */
 function fitHand(){
