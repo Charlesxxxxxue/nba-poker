@@ -3,7 +3,8 @@
 <head data-page-node-id="D6OXVWtNQzfFHEl8yeZeEv">
 <meta charset="UTF-8" data-page-node-id="GqUavfoCHzaA4SQOFX9HJY">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" data-page-node-id="HLbLnKHQUaZq0cvHfzMR8X">
-<title>NBA Poker · 可玩原型 v1.9.1 · 卡面 V1.0（S4 泼墨 · 25 星 · 无水印）</title>
+<title>NBA Poker · 可玩原型 v1.9.2 · 卡面 V1.0（S4 泼墨 · 25 星 · 无水印）</title>
+<!-- build:20261114a · 手机端手牌两行铺开（每行约 10 张 / 露出约 34px） -->
 <!-- 内联图标：避免浏览器默认请求 /favicon.ico 与 /apple-touch-icon.png 产生 404 控制台噪音 -->
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23070c18'/%3E%3Ccircle cx='32' cy='32' r='19' fill='%23d98b3a'/%3E%3Cg fill='none' stroke='%23070c18' stroke-width='2.6'%3E%3Cpath d='M32 13v38M13 32h38'/%3E%3Cpath d='M18.5 18.5c8 6 8 21 0 27M45.5 18.5c-8 6-8 21 0 27'/%3E%3C/g%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23070c18'/%3E%3Ccircle cx='32' cy='32' r='19' fill='%23d98b3a'/%3E%3Cg fill='none' stroke='%23070c18' stroke-width='2.6'%3E%3Cpath d='M32 13v38M13 32h38'/%3E%3Cpath d='M18.5 18.5c8 6 8 21 0 27M45.5 18.5c-8 6-8 21 0 27'/%3E%3C/g%3E%3C/svg%3E">
@@ -359,6 +360,31 @@
    body[data-face="c"] .card .sc{font-size:12px;bottom:3px;right:5px}
    body[data-face="c"] .card .rc{bottom:15px;right:5px}
    body[data-face="c"] .hand.dense .card .r{font-size:13px;top:2px;left:5px}
+
+   /* ===== 手机端手牌两行铺开（A 方案改良）：牌多时拆两行 + 窄牌完整显示 =====
+      参考图是横屏 884px / 17 张 × 52×150 瘦长牌；竖屏单行 20 张只能露 18px，数学上放不下点数+花色。
+      375px 真机扣掉四层 padding 后可用宽仅约 315px，若沿用 46px 宽牌做重叠，每张只露 29px 且右下被盖。
+      故两行模式下直接把牌收窄到 ~30px、行内 gap 2px 不重叠：牌面元素全部落在牌内，接近参考图观感。 */
+   .hand.two{display:flex;flex-direction:column;justify-content:flex-start;gap:5px;overflow-x:hidden;overflow-y:hidden;padding:9px 4px 7px;min-height:0}
+   .hand.two .handRow{display:flex;flex-wrap:nowrap;justify-content:flex-start;align-items:flex-start;gap:2px;min-width:0}
+   .hand.two .card{width:var(--hand-cw,30px);margin-left:0}
+   .hand.two .card.sel{transform:translateY(-6px);z-index:5}
+   .hand.two .card:hover{transform:translateY(-3px)}
+   body[data-face="c"] .hand.two .card .rc{display:none}
+   body[data-face="c"] .hand.two .card .sc{display:block;font-size:11px;right:3px;bottom:2px}
+   body[data-face="c"] .hand.two .card .big{display:flex;inset:auto;left:2px;top:31px;width:calc(100% - 4px);height:22px;
+     align-items:center;justify-content:center;font-size:17px;font-weight:900;line-height:1;opacity:.80;transform:none}
+   body[data-face="c"] .hand.two .card:not(.red) .big{color:#151821}
+   body[data-face="c"] .hand.two .card .r{font-family:Georgia,"Times New Roman",serif;font-size:16px;font-weight:700;letter-spacing:-.5px;left:4px;top:2px}
+   body[data-face="c"] .hand.two .card .s{font-size:11px;top:19px;left:4px}
+   /* 两行多占约 59px：压缩中间区与日志，并把 stage 交回页面滚动，保证一屏放得下不被裁切 */
+   .stage{overflow:visible}
+   body{height:auto;min-height:100vh}
+   .center{min-height:68px;gap:1px}
+   .lastmove{min-height:28px}
+   .bottom{min-height:32px;margin:0}
+   .log{height:62px;line-height:1.55}
+   .logWrap{margin:4px 0 6px}
 }
   /* ===== 超窄屏（≤360px）进一步收紧 ===== */
   @media (max-width:360px){
@@ -443,7 +469,7 @@
 </div>
 
   <div class="topbar" data-page-node-id="ICFu3aC2YrRYewiiDXPHcz">
-    <div data-page-node-id="xCuiWjasILiAngVsuSvITd"><b data-page-node-id="bjjV5UeT1fEn2t9a7BWEd8">NBA POKER</b> · 可玩原型 <b data-page-node-id="HcTMevaBKC0aZX9hmWQdFe">v1.9.1</b> · 卡面 <b data-page-node-id="DNXWe0lfB2iZi7Ud28ul1I">v0.7</b> <span class="pill" data-page-node-id="JmEb1LyuwGaKbcPI31kENW">｜25 星卡池 ｜ 标准叫分制 ｜ 农民 2打1 协作</span></div>
+    <div data-page-node-id="xCuiWjasILiAngVsuSvITd"><b data-page-node-id="bjjV5UeT1fEn2t9a7BWEd8">NBA POKER</b> · 可玩原型 <b data-page-node-id="HcTMevaBKC0aZX9hmWQdFe">v1.9.2</b> · 卡面 <b data-page-node-id="DNXWe0lfB2iZi7Ud28ul1I">v0.7</b> <span class="pill" data-page-node-id="JmEb1LyuwGaKbcPI31kENW">｜25 星卡池 ｜ 标准叫分制 ｜ 农民 2打1 协作</span></div>
     <button class="mini" id="minBtn" data-page-node-id="EySCTcVn0L1pkF0xgMMba8">▽<span class="btnTxt"> 最小化</span></button>
     <button class="mini" id="skillIntroBtn" data-page-node-id="ATxvLrXTIYvO6LVVtERSS4">📖<span class="btnTxt"> 技能简介</span></button>
     <button class="mini" id="muteBtn" data-page-node-id="WgivqBfEfWRumHUxwRZoFU">🔊</button>
@@ -1757,25 +1783,58 @@ function cardHTML(c){
   const k=SUIT_CODE[suit]||"sp";
   return `<div class="suit-bar sb-${k}"></div><div class="r">${c.label}</div><div class="s ${k}">${suit}</div><div class="sc ${k}">${suit}</div><div class="big ${k}">${suit}</div><div class="rc">${c.label}</div>`;
 }
-/* v1.7 手牌自适应步长：牌少时几乎不重叠（花色全露），牌多时压缩但保证 ≥28px 可见宽度 */
+/* v1.9.2 手牌自适应步长：桌面 / 手机少牌保持单行重叠；手机牌多（≥11 张）自动拆两行，
+   每行约 10 张，并把牌收窄成完整显示的瘦长牌（~30×64px，对齐参考图 52×150 比例）。
+   幂等：重复调用（resize / 旋转屏幕）先摊平再重排，不改变牌序。
+   基准牌宽按 CSS clamp 同步计算，避免 resize 时读到上一轮已被收窄的窄牌宽度。 */
 function fitHand(){
   const h=document.getElementById("hand");
   if(!h) return;
-  const cards=h.querySelectorAll(".card");
+  const cards=Array.from(h.querySelectorAll(".card"));
   const n=cards.length;
   if(!n) return;
-  const cw=cards[0].offsetWidth||46;
+  const vw=window.innerWidth;
+  const mobile=!!(window.matchMedia && window.matchMedia("(max-width:520px)").matches);
+  const cw=mobile ? Math.max(34,Math.min(50,vw*0.124)) : Math.max(38,Math.min(50,vw*0.11));
   const avail=h.clientWidth-12;
-  let step=cw+4;                                  // 默认：几乎不重叠
-  if(n>1){
-    const need=Math.floor((avail-cw)/(n-1));
-    step=Math.max(18, Math.min(cw+4, need));      // 最小可见 18px（适配 13px 点数索引；溢出由手牌横向滚动承接）
+  const two=mobile && n>=11;
+  h.classList.toggle("two",two);
+  /* 幂等摊平：把上一轮 .handRow 里的牌按原序搬回手牌容器 */
+  h.querySelectorAll(".handRow").forEach(r=>{ while(r.firstChild) h.appendChild(r.firstChild); r.remove(); });
+  let minStep=Infinity;
+  if(two){
+    const per=Math.ceil(n/2), gap=2;
+    const cardW=Math.max(24, Math.min(cw, Math.floor((avail-(per-1)*gap)/per)));
+    h.style.setProperty("--hand-cw",cardW+"px");
+    for(let i=0;i<n;i+=per){
+      const row=document.createElement("div");
+      row.className="handRow";
+      h.appendChild(row);
+      for(let j=i;j<Math.min(i+per,n);j++){
+        cards[j].style.marginLeft="0px";
+        row.appendChild(cards[j]);
+      }
+    }
+    minStep=cardW;                                // 窄牌完整显示，不进 dense
+  } else {
+    h.style.removeProperty("--hand-cw");
+    const cs=Array.from(h.querySelectorAll(".card"));
+    let step=cw+4;                               // 默认：几乎不重叠
+    if(cs.length>1) step=Math.max(18, Math.min(cw+4, Math.floor((avail-cw)/(cs.length-1))));
+    minStep=step;                                // 最小可见 18px，溢出由横向滚动承接
+    const ml=(step-cw)+"px";
+    cs.forEach((c,i)=>{ c.style.marginLeft=(i===0?"0px":ml); });
   }
   /* 步长小于 22px 切「密集模式」：保留点数 + 左侧色条辨红黑，隐藏小花色与右下镜像索引 */
-  h.classList.toggle("dense", step<22);
-  const ml=(step-cw)+"px";
-  for(let i=0;i<n;i++){ cards[i].style.marginLeft=(i===0?"0px":ml); }
+  h.classList.toggle("dense", minStep<22);
 }
+/* 旋转屏幕 / 手机地址栏收起导致宽度变化时重排 */
+(function(){
+  let t=null;
+  const re=()=>{ clearTimeout(t); t=setTimeout(fitHand,120); };
+  window.addEventListener("resize",re,{passive:true});
+  window.addEventListener("orientationchange",()=>setTimeout(fitHand,260),{passive:true});
+})();
 function renderHand(){
   const h=document.getElementById("hand");h.innerHTML="";
   const dMode=!!G.durantSelect;
