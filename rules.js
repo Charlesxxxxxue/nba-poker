@@ -60,19 +60,19 @@
     wade: { key: "wade", name: "韦德", skill: "闪电突破", type: "passive", cd: "常驻", desc: "点数≤10的单牌默认+1", descFull: "你打出的点数不大于 10 的单张牌，点数会自动加 1，让你更容易压住对手的单牌。" }
   };
   const STAR_IMG = {
-    jokic: "star_cards/A_jokic_hearthstone.jpg", wembanyama: "star_cards/A_wembanyama_hearthstone.jpg",
-    alexander: "star_cards/A_alexander_hearthstone.jpg", brunson: "star_cards/A_brunson_hearthstone.jpg",
-    durant: "star_cards/A_durant_hearthstone.jpg", harden: "star_cards/A_harden_hearthstone.jpg",
-    doncic: "star_cards/A_doncic_hearthstone.jpg", kobe: "star_cards/A_kobe_hearthstone.jpg",
-    duncan: "star_cards/A_duncan_hearthstone.jpg", oNeal: "star_cards/A_oNeal_hearthstone.jpg",
-    kidd: "star_cards/A_kidd_hearthstone.jpg", nowitzki: "star_cards/A_nowitzki_hearthstone.jpg",
-    curry: "star_cards/A_curry_hearthstone.jpg", lebron: "star_cards/A_lebron_hearthstone.jpg",
-    jordan: "star_cards/A_jordan_hearthstone.jpg",
-    giannis: "star_cards/A_giannis_hearthstone.jpg", edwards: "star_cards/A_edwards_hearthstone.jpg",
-    mitchell: "star_cards/A_mitchell_hearthstone.jpg", cunningham: "star_cards/A_cunningham_hearthstone.jpg",
-    leonard: "star_cards/A_leonard_hearthstone.jpg", kareem: "star_cards/A_kareem_hearthstone.jpg",
-    magic: "star_cards/A_magic_hearthstone.jpg", bird: "star_cards/A_bird_hearthstone.jpg",
-    kg: "star_cards/A_kg_hearthstone.jpg", wade: "star_cards/A_wade_hearthstone.jpg"
+    curry: "star_cards/V1_curry.jpg", jordan: "star_cards/V1_jordan.jpg",
+    lebron: "star_cards/V1_lebron.jpg", wemby: "star_cards/V1_wemby.jpg",
+    edwards: "star_cards/V1_edwards.jpg", jokic: "star_cards/V1_jokic.jpg",
+    alexander: "star_cards/V1_alexander.jpg", brunson: "star_cards/V1_brunson.jpg",
+    durant: "star_cards/V1_durant.jpg", harden: "star_cards/V1_harden.jpg",
+    doncic: "star_cards/V1_doncic.jpg", kobe: "star_cards/V1_kobe.jpg",
+    duncan: "star_cards/V1_duncan.jpg", oNeal: "star_cards/V1_oNeal.jpg",
+    kidd: "star_cards/V1_kidd.jpg", nowitzki: "star_cards/V1_nowitzki.jpg",
+    giannis: "star_cards/V1_giannis.jpg", mitchell: "star_cards/V1_mitchell.jpg",
+    cunningham: "star_cards/V1_cunningham.jpg", leonard: "star_cards/V1_leonard.jpg",
+    kareem: "star_cards/V1_kareem.jpg", magic: "star_cards/V1_magic.jpg",
+    bird: "star_cards/V1_bird.jpg", kg: "star_cards/V1_kg.jpg",
+    wade: "star_cards/V1_wade.jpg",
   };
 
   /* ---------- 牌组 ---------- */
