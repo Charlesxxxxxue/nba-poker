@@ -74,6 +74,7 @@
     bird: "star_cards/V1_bird.jpg", kg: "star_cards/V1_kg.jpg",
     wade: "star_cards/V1_wade.jpg",
   };
+   const STAR_THUMB = Object.fromEntries(Object.entries(STAR_IMG).map(([k,v])=>[k,v.replace('star_cards/','star_cards/thumbs/')]));
 
   /* ---------- 牌组 ---------- */
   let CARD_SEQ = 0;
@@ -233,7 +234,7 @@
   function pickTwoLowest(h) { return h.slice().sort((a, b) => a.v - b.v).slice(0, Math.min(JORDAN_WILDS, h.length)); }
 
   return {
-    SUITS, RED, SUIT_ORDER, LABEL, V_RANK, SUIT_NAME, JORDAN_WILDS, STARS, STAR_IMG,
+    SUITS, RED, SUIT_ORDER, LABEL, V_RANK, SUIT_NAME, JORDAN_WILDS, STARS, STAR_IMG, STAR_THUMB,
     buildDeck, shuffle, sortHand, groupByVal, anyBomb,
     isConsec, findConsecRun, parseMove, beats, parseMoveWithWild,
     genAllMoves, genBeating, handStrength, countBombs, minTricks,

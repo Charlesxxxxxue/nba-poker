@@ -190,6 +190,17 @@
    /* 图片牌面层：Object-fit fill 贴合 3:4 卡片；状态牌仍由各自背景色承接 */
    .card .faceImg{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;display:block;border-radius:inherit;pointer-events:none;z-index:0}
    .card.wild .faceImg{opacity:.94}
+   /* 基础牌面 · 纯 CSS 零图片；data-face = a 极简 / b 蓝框 / c 经典 */
+   .card .big{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:900;line-height:1;opacity:.10;pointer-events:none}
+   .card .rc{display:none;position:absolute;bottom:2px;right:5px;font-size:11px;font-weight:800;transform:rotate(180deg);color:#151821}
+   .card.red .rc,.card.red .big{color:#dc1b32}
+   body[data-face="b"] .card{box-shadow:-2px 0 4px rgba(50,50,93,.15),inset 0 0 0 2px rgba(22,103,255,.18),0 1px 2px rgba(50,50,93,.10)}
+   body[data-face="b"] .card .big{opacity:.17;color:#1667ff}
+   body[data-face="c"] .card .big{display:none}
+   body[data-face="c"] .card .rc{display:block}
+   body[data-face="c"] .card .r{font-size:17px}
+   body[data-face="c"] .card .s{font-size:13px;top:22px}
+   body[data-face="c"] .card .sc{font-size:13px}
   .card.red .suit-bar{background:linear-gradient(180deg,#ff5a6e,#a50d21)}
   .card:not(.red) .suit-bar{background:linear-gradient(180deg,#46587c,#1c2740)}
   /* v1.7 花色红黑双色编码：手牌重叠时靠左侧色条即可分辨红黑（♠♣ 黑 / ♥♦ 红） */
@@ -394,7 +405,7 @@
   @media (max-width:560px){ .skillNm{min-width:52px;font-size:13px} .skillCd{display:none} }
 </style>
 </head>
-<body data-page-node-id="6hdDJl0xpRS5EK2ETUs6LA">
+<body data-face="a" data-page-node-id="6hdDJl0xpRS5EK2ETUs6LA">
   <div class="topbar" data-page-node-id="ICFu3aC2YrRYewiiDXPHcz">
     <div data-page-node-id="xCuiWjasILiAngVsuSvITd"><b data-page-node-id="bjjV5UeT1fEn2t9a7BWEd8">NBA POKER</b> · 可玩原型 <b data-page-node-id="HcTMevaBKC0aZX9hmWQdFe">v1.9.1</b> · 卡面 <b data-page-node-id="DNXWe0lfB2iZi7Ud28ul1I">v0.7</b> <span class="pill" data-page-node-id="JmEb1LyuwGaKbcPI31kENW">｜25 星卡池 ｜ 标准叫分制 ｜ 农民 2打1 协作</span></div>
     <button class="mini" id="minBtn" data-page-node-id="EySCTcVn0L1pkF0xgMMba8">▽<span class="btnTxt"> 最小化</span></button>
@@ -822,7 +833,7 @@ function renderPickStar(){
   cand.forEach(k=>{
     const st=STARS[k];
     const b=document.createElement("button");b.className="btn starPick";
-    const img=STAR_IMG[k]?`<img src="${STAR_IMG[k]}" class="spImg" alt="${st.name}" loading="lazy">`:'';
+    const img=STAR_IMG[k]?`<img src="${STAR_THUMB[k]}" class="spImg" alt="${st.name}" loading="lazy">`:'';
     b.innerHTML=`${img}<div class="spInfo"><div class="spName"><b>${st.name}</b></div><div class="spSkill">${st.skill}</div><div class="spType">${typeTxt(st)}</div></div>`;
     b.onclick=()=>pickStar(k);
     b.onmouseenter=(e)=>showTip(st);
@@ -842,7 +853,7 @@ function setHero(k){
   if(!card) return;
   if(!k || !STAR_IMG[k] || !STARS[k]){ card.innerHTML='<div class="heroPh">?</div>'; if(sk) sk.innerHTML='<span class="hsEmpty">未选择球星</span>'; return; }
   const st=STARS[k];
-  card.innerHTML=`<img src="${STAR_IMG[k]}" class="heroImg" alt="${st.name}"><span class="heroBadge">${st.skill}</span>`;
+  card.innerHTML=`<img src="${STAR_THUMB[k]}" class="heroImg" alt="${st.name}"><span class="heroBadge">${st.skill}</span>`;
   const tl = st.type==='active'?'主动':(st.type==='reactive'?'反应':(st.type==='passive+active'?'被动+主动':'被动'));
   if(sk) sk.innerHTML=`<span class="hsName">${st.name}</span><span class="hsType">${tl}</span><span class="hsCd">${st.cd||"—"}</span>`;
 }
@@ -860,7 +871,7 @@ function pickStar(k){
   G.star[1]=aiPickFromPool();
   G.star[2]=aiPickFromPool();
   G.ss=[freshSS(),freshSS(),freshSS()];
-  const av=(key)=>STAR_IMG[key]?`<img src="${STAR_IMG[key]}" class="seatAv" alt="${STARS[key].name}">`:'';
+  const av=(key)=>STAR_IMG[key]?`<img src="${STAR_THUMB[key]}" class="seatAv" alt="${STARS[key].name}">`:'';
   document.getElementById("seat0").querySelector(".nm").innerHTML=`你（${st.name}） <span class="tag" id="tag0" style="display:none">地主</span>`;
   setHero(k);
   document.getElementById("seat1").querySelector(".nm").innerHTML=`${av(G.star[1])}🤖 AI 对手 ①（${STARS[G.star[1]].name}） <span class="tag" id="tag1" style="display:none">地主</span>`;
@@ -1667,18 +1678,19 @@ function renderHands(){
 }
 /* 牌面已恢复 sample_cards 龙纹图片；以下纯文字索引规则保留作降级样式（SUIT_NAME/V_RANK → rules.js） */
 function cardImageURL(c){
-  if(c.v===17) return 'sample_cards/joker_big.jpg';
-  if(c.v===16) return 'sample_cards/joker_small.jpg';
-  const prefix=SUIT_NAME[c.s];
-  const rank=V_RANK[c.v]||c.label;
-  return `sample_cards/${prefix}_${rank}.jpg`;
+  // 仅大小王用 Charles 指定的固定卡面；普通牌走零图片 CSS 基础牌面
+  if(c.v===17) return 'card_faces/joker_big.jpg';
+  if(c.v===16) return 'card_faces/joker_small.jpg';
+  return '';
 }
 /* v1.7 花色红黑双色编码：♠♣ → 黑 / ♥♦ → 红（仅区分红黑，不做四色） */
 const SUIT_CODE={'♠':'sp','♥':'he','♣':'cl','♦':'di'};
 function cardHTML(c){
-  // 龙纹图片牌面（左上大点数+花色、右下镜像索引）；大小王用 Charles 指定的固定卡面
-  if(c.v===17||c.v===16||(c.s && SUIT_NAME[c.s])) return `<img class="faceImg" src="${cardImageURL(c)}" alt="" draggable="false" decoding="async">`;
-  return `<div class="r2">${c.label||""}</div>`;
+  if(c.v===17||c.v===16) return `<img class="faceImg" src="${cardImageURL(c)}" alt="" draggable="false" decoding="async">`;
+  const suit=c.s||"";
+  if(!suit) return `<div class="r2">${c.label||""}</div>`;
+  const k=SUIT_CODE[suit]||"sp";
+  return `<div class="suit-bar sb-${k}"></div><div class="r">${c.label}</div><div class="s ${k}">${suit}</div><div class="sc ${k}">${suit}</div><div class="big ${k}">${suit}</div><div class="rc">${c.label}</div>`;
 }
 /* v1.7 手牌自适应步长：牌少时几乎不重叠（花色全露），牌多时压缩但保证 ≥28px 可见宽度 */
 function fitHand(){
