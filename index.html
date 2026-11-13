@@ -197,10 +197,10 @@
    body[data-face="b"] .card{box-shadow:-2px 0 4px rgba(50,50,93,.15),inset 0 0 0 2px rgba(22,103,255,.18),0 1px 2px rgba(50,50,93,.10)}
    body[data-face="b"] .card .big{opacity:.17;color:#1667ff}
    body[data-face="c"] .card .big{display:none}
-   body[data-face="c"] .card .rc{display:block}
+   body[data-face="c"] .card .rc{display:block;bottom:16px;right:5px}
+   body[data-face="c"] .card .sc{bottom:3px;right:5px;font-size:13px}
    body[data-face="c"] .card .r{font-size:17px}
    body[data-face="c"] .card .s{font-size:13px;top:22px}
-   body[data-face="c"] .card .sc{font-size:13px}
   .card.red .suit-bar{background:linear-gradient(180deg,#ff5a6e,#a50d21)}
   .card:not(.red) .suit-bar{background:linear-gradient(180deg,#46587c,#1c2740)}
   /* v1.7 花色红黑双色编码：手牌重叠时靠左侧色条即可分辨红黑（♠♣ 黑 / ♥♦ 红） */
@@ -337,7 +337,14 @@
     .controls:has(.bidOpt){gap:5px}
     .log{height:84px;font-size:12.5px;line-height:1.68}
     .logWrap{margin:6px 0 10px}
-  }
+  
+   /* C 款在手机端沿用收细索引，避免 17px 点数被邻牌盖住 */
+   body[data-face="c"] .card .r{font-size:15px;top:3px;left:5px}
+   body[data-face="c"] .card .s{font-size:12px;top:20px;left:5px}
+   body[data-face="c"] .card .sc{font-size:12px;bottom:3px;right:5px}
+   body[data-face="c"] .card .rc{bottom:15px;right:5px}
+   body[data-face="c"] .hand.dense .card .r{font-size:13px;top:2px;left:5px}
+}
   /* ===== 超窄屏（≤360px）进一步收紧 ===== */
   @media (max-width:360px){
     .seat .bubble{display:none}
@@ -405,7 +412,7 @@
   @media (max-width:560px){ .skillNm{min-width:52px;font-size:13px} .skillCd{display:none} }
 </style>
 </head>
-<body data-face="a" data-page-node-id="6hdDJl0xpRS5EK2ETUs6LA">
+<body data-face="c" data-page-node-id="6hdDJl0xpRS5EK2ETUs6LA">
   <div class="topbar" data-page-node-id="ICFu3aC2YrRYewiiDXPHcz">
     <div data-page-node-id="xCuiWjasILiAngVsuSvITd"><b data-page-node-id="bjjV5UeT1fEn2t9a7BWEd8">NBA POKER</b> · 可玩原型 <b data-page-node-id="HcTMevaBKC0aZX9hmWQdFe">v1.9.1</b> · 卡面 <b data-page-node-id="DNXWe0lfB2iZi7Ud28ul1I">v0.7</b> <span class="pill" data-page-node-id="JmEb1LyuwGaKbcPI31kENW">｜25 星卡池 ｜ 标准叫分制 ｜ 农民 2打1 协作</span></div>
     <button class="mini" id="minBtn" data-page-node-id="EySCTcVn0L1pkF0xgMMba8">▽<span class="btnTxt"> 最小化</span></button>
