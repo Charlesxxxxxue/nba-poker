@@ -190,6 +190,21 @@
    /* 图片牌面层：Object-fit fill 贴合 3:4 卡片；状态牌仍由各自背景色承接 */
    .card .faceImg{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;display:block;border-radius:inherit;pointer-events:none;z-index:0}
    .card.wild .faceImg{opacity:.94}
+   /* 选将：点击选中 + 光晕 + 中央技能弹框（手机端替代 hover） */
+   .btn.starPick.sel{transform:translateY(-2px);animation:pickGlow 1.8s ease-in-out infinite}
+   @keyframes pickGlow{0%,100%{box-shadow:0 0 0 2px var(--accent),0 0 0 6px rgba(22,103,255,.16),0 0 18px rgba(22,103,255,.45)}50%{box-shadow:0 0 0 2px var(--accent),0 0 0 8px rgba(22,103,255,.24),0 0 28px rgba(22,103,255,.70)}}
+   .pickModal{display:none;position:fixed;inset:0;z-index:80;background:rgba(4,8,16,.72);align-items:center;justify-content:center;padding:18px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+   .pickModal.on{display:flex}
+   .pickCard{background:#fff;border:1px solid var(--glass-bd);border-radius:20px;width:100%;max-width:330px;padding:16px;text-align:center;box-shadow:0 18px 50px rgba(6,27,49,.28)}
+   .pickCard .pmImg{width:132px;height:auto;border-radius:12px;border:1px solid #d5e1f0;display:block;margin:0 auto 12px}
+   .pickCard .pmName{font-size:19px;font-weight:700;color:var(--txt)}
+   .pickCard .pmSkill{font-size:15px;font-weight:700;color:var(--accent);margin-top:2px}
+   .pickCard .pmType{display:inline-block;font-size:11px;font-weight:700;border-radius:980px;padding:2px 9px;margin:8px 0;border:1px solid rgba(22,103,255,.34);background:rgba(22,103,255,.08);color:#0b5cb8}
+   .pickCard .pmDesc{font-size:13px;line-height:1.7;color:rgba(6,27,49,.78);text-align:left;background:var(--glass-2);border-radius:12px;padding:10px 12px;margin:0 0 14px}
+   .pickCard .pmBtns{display:flex;gap:10px}
+   .pickCard .pmBtns .btn{flex:1;padding:12px 8px;font-size:15px}
+   body[data-face="c"] .hand.dense .card .rc{display:none}
+
    /* 基础牌面 · 纯 CSS 零图片；data-face = a 极简 / b 蓝框 / c 经典 */
    .card .big{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:900;line-height:1;opacity:.10;pointer-events:none}
    .card .rc{display:none;position:absolute;bottom:2px;right:5px;font-size:11px;font-weight:800;transform:rotate(180deg);color:#151821}
@@ -413,6 +428,20 @@
 </style>
 </head>
 <body data-face="c" data-page-node-id="6hdDJl0xpRS5EK2ETUs6LA">
+<div id="pickModal" class="pickModal" onclick="if(event.target===this)closePickModal()">
+  <div class="pickCard">
+    <img id="pmImg" class="pmImg" src="" alt="">
+    <div class="pmName" id="pmName"></div>
+    <div class="pmSkill" id="pmSkill"></div>
+    <div class="pmType" id="pmType"></div>
+    <div class="pmDesc" id="pmDesc"></div>
+    <div class="pmBtns">
+      <button class="btn" onclick="closePickModal()">取消</button>
+      <button class="btn go" onclick="confirmPickStar()">确定选择</button>
+    </div>
+  </div>
+</div>
+
   <div class="topbar" data-page-node-id="ICFu3aC2YrRYewiiDXPHcz">
     <div data-page-node-id="xCuiWjasILiAngVsuSvITd"><b data-page-node-id="bjjV5UeT1fEn2t9a7BWEd8">NBA POKER</b> · 可玩原型 <b data-page-node-id="HcTMevaBKC0aZX9hmWQdFe">v1.9.1</b> · 卡面 <b data-page-node-id="DNXWe0lfB2iZi7Ud28ul1I">v0.7</b> <span class="pill" data-page-node-id="JmEb1LyuwGaKbcPI31kENW">｜25 星卡池 ｜ 标准叫分制 ｜ 农民 2打1 协作</span></div>
     <button class="mini" id="minBtn" data-page-node-id="EySCTcVn0L1pkF0xgMMba8">▽<span class="btnTxt"> 最小化</span></button>
@@ -830,6 +859,33 @@ function newGame(){
   renderPickStar();
   renderAll();
 }
+
+let pickSelKey=null;
+function selectStarCard(k,btn){
+  pickSelKey=k;
+  document.querySelectorAll(".btn.starPick").forEach(x=>x.classList.toggle("sel",x===btn));
+  const st=STARS[k];
+  const typeMap={active:"主动 · 一局一次",reactive:"反应 · 一局一次","passive+active":"被动 + 主动",passive:"被动 · 常驻"};
+  document.getElementById("pmImg").src=STAR_IMG[k]||"";
+  document.getElementById("pmName").textContent=st.name;
+  document.getElementById("pmSkill").textContent=st.skill;
+  document.getElementById("pmType").textContent=typeMap[st.type]||st.cd||"";
+  document.getElementById("pmDesc").textContent=st.descFull||st.desc||"";
+  document.getElementById("pickModal").classList.add("on");
+}
+function closePickModal(){
+  document.getElementById("pickModal").classList.remove("on");
+  pickSelKey=null;
+  document.querySelectorAll(".btn.starPick").forEach(x=>x.classList.remove("sel"));
+}
+function confirmPickStar(){
+  const k=pickSelKey;
+  if(!k) return;
+  document.getElementById("pickModal").classList.remove("on");
+  pickSelKey=null;
+  pickStar(k);
+}
+
 function renderPickStar(){
   const c=document.getElementById("controls");c.innerHTML="";
   const keysAll=Object.keys(STARS);
@@ -842,10 +898,12 @@ function renderPickStar(){
     const b=document.createElement("button");b.className="btn starPick";
     const img=STAR_IMG[k]?`<img src="${STAR_THUMB[k]}" class="spImg" alt="${st.name}" loading="lazy">`:'';
     b.innerHTML=`${img}<div class="spInfo"><div class="spName"><b>${st.name}</b></div><div class="spSkill">${st.skill}</div><div class="spType">${typeTxt(st)}</div></div>`;
-    b.onclick=()=>pickStar(k);
-    b.onmouseenter=(e)=>showTip(st);
-    b.onmousemove=(e)=>moveTip(e);
-    b.onmouseleave=hideTip;
+    b.onclick=()=>selectStarCard(k,b);
+    if(window.matchMedia && window.matchMedia('(hover:hover)').matches){
+      b.onmouseenter=(e)=>showTip(st);
+      b.onmousemove=(e)=>moveTip(e);
+      b.onmouseleave=hideTip;
+    }
     c.appendChild(b);
   });
 }
