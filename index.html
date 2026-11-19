@@ -3,8 +3,8 @@
 <head data-page-node-id="D6OXVWtNQzfFHEl8yeZeEv">
 <meta charset="UTF-8" data-page-node-id="GqUavfoCHzaA4SQOFX9HJY">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" data-page-node-id="HLbLnKHQUaZq0cvHfzMR8X">
-<title>NBA Poker · 可玩原型 v1.9.2 · 卡面 V1.0（S4 泼墨 · 25 星 · 无水印）</title>
-<!-- build:20261114a · 手机端手牌两行铺开（每行约 10 张 / 露出约 34px） -->
+<title>NBA Poker · 可玩原型 v1.9.4 · 卡面 V1.0（S4 泼墨 · 25 星 · 无水印）</title>
+<!-- build:20261119b · 技能可见性：对手犯规条 + 韦德变形特效 + 触发闪光 + 状态文案补全 -->
 <!-- 内联图标：避免浏览器默认请求 /favicon.ico 与 /apple-touch-icon.png 产生 404 控制台噪音 -->
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23070c18'/%3E%3Ccircle cx='32' cy='32' r='19' fill='%23d98b3a'/%3E%3Cg fill='none' stroke='%23070c18' stroke-width='2.6'%3E%3Cpath d='M32 13v38M13 32h38'/%3E%3Cpath d='M18.5 18.5c8 6 8 21 0 27M45.5 18.5c-8 6-8 21 0 27'/%3E%3C/g%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23070c18'/%3E%3Ccircle cx='32' cy='32' r='19' fill='%23d98b3a'/%3E%3Cg fill='none' stroke='%23070c18' stroke-width='2.6'%3E%3Cpath d='M32 13v38M13 32h38'/%3E%3Cpath d='M18.5 18.5c8 6 8 21 0 27M45.5 18.5c-8 6-8 21 0 27'/%3E%3C/g%3E%3C/svg%3E">
@@ -97,6 +97,14 @@
     border-radius:1px;transition:background .25s,box-shadow .25s,border-color .25s}
   .foulbar .fb.on{background:linear-gradient(180deg,#8fc0ff,#1667ff);border-color:#1667ff;box-shadow:0 0 7px rgba(22,103,255,.55)}
   .foulbar.full{animation:fbPulse 1.1s ease-in-out infinite}
+  /* v1.9.4 亚历山大：两个对手座位各一条「被造犯规」蓄力条（与自己的技能条分开） */
+  .oppFoul{display:none;align-items:center;gap:4px;margin-top:3px;font-size:9px;color:var(--dim)}
+  .oppFoul .foulbar{transform:skewX(-16deg)}
+  .oppFoul .foulbar .fb{width:8px;height:10px}
+  .oppFoul .ofNum{font-weight:800;color:var(--txt);white-space:nowrap;font-size:9px}
+  .oppFoul.ready .ofNum{color:#0b5cb8}
+  .oppFoul.ready .foulbar{box-shadow:0 0 8px rgba(22,103,255,.48)}
+  .oppFoul.spent{opacity:.5}
   @keyframes fbPulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.45) drop-shadow(0 0 5px rgba(22,103,255,.55))}}
   .foultxt{font-size:9px;color:var(--gold);font-weight:700;letter-spacing:.3px;transform:skewX(-16deg);white-space:nowrap}
   /* v1.9 玩家面板：把「英雄位 / 手牌 / 操作按钮」三段合并为一张区域卡，强化「我的回合」的掌控感 */
@@ -106,7 +114,19 @@
     box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.08)}
   .center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:120px}
   .lastmove{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;min-height:46px;align-items:center}
-  /* v1.9 中间区死区填充：三家「上一手」对比面板（原 324px 高只装 172px 内容，空 152px） */
+  /* v1.9.4 韦德·闪电突破：打出的牌从原点数翻转成 +1 点数，让被动技能肉眼可见 */
+  .lastmove .card.wadeCard{perspective:420px}
+  .card .wadeOld,.card .wadeNew{position:absolute;inset:0;backface-visibility:hidden}
+  .card.wadeCard .wadeOld{animation:wadeOldOut 1.05s ease forwards}
+  .card.wadeCard .wadeNew{animation:wadeNewIn 1.05s ease forwards}
+  @keyframes wadeOldOut{0%,42%{opacity:1;transform:rotateY(0)}50%,100%{opacity:0;transform:rotateY(88deg)}}
+  @keyframes wadeNewIn{0%,48%{opacity:0;transform:rotateY(-88deg)}56%,100%{opacity:1;transform:rotateY(0)}}
+  .lastmove .wadeTag{align-self:center;font-size:10px;font-weight:800;color:#0b5cb8;white-space:nowrap;
+    background:rgba(22,103,255,.10);border:1px solid rgba(22,103,255,.28);border-radius:980px;padding:3px 9px;
+    animation:wadeTagIn .9s ease both}
+  @keyframes wadeTagIn{0%{opacity:0;transform:scale(.8)}30%,100%{opacity:1;transform:scale(1)}}
+  /* v1.9 中间区死区填充：三家「上一手」对比面板（v1.9.3 起取消：信息噪音 > 决策价值） */
+  #duel{display:none!important}
   .duel{display:flex;gap:8px;justify-content:center;align-items:stretch;width:100%;max-width:940px;margin:2px 0 0}
   .duelCol{flex:1 1 0;min-width:0;border:1px solid var(--glass-bd);border-radius:9px;padding:5px 7px;
     background:rgba(6,27,49,.03);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
@@ -149,6 +169,16 @@
     box-shadow:0 10px 30px rgba(50,50,93,.22);border:1px solid rgba(255,255,255,.28);opacity:0;pointer-events:none;
     transition:opacity .2s ease,transform .2s ease;white-space:nowrap}
   .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+  /* v1.9.4 技能触发闪光：相对 .stage 绝对定位，避开对手座位与犯规条，不依赖 env() / fixed */
+  .skillFlash{position:absolute;left:50%;top:170px;transform:translateX(-50%) translateY(-10px);
+    z-index:70;max-width:min(360px,88vw);padding:8px 14px;border-radius:980px;
+    background:linear-gradient(90deg,#1667ff,#2f9bff);color:#fff;font-size:12.5px;font-weight:800;
+    box-shadow:0 8px 24px rgba(22,103,255,.42);border:1px solid rgba(255,255,255,.35);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:0;pointer-events:none}
+  .skillFlash.on{animation:skillFlashIn 2.1s ease forwards}
+  @keyframes skillFlashIn{0%{opacity:0;transform:translateX(-50%) translateY(-12px) scale(.92)}
+    12%,78%{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}
+    100%{opacity:0;transform:translateX(-50%) translateY(-8px) scale(.97)}}
   .card{width:clamp(38px,11vw,50px);height:clamp(54px,15.5vw,72px);border-radius:8px;background:linear-gradient(180deg,#ffffff,#eef0f5);border:1px solid #c9d2e6;position:relative;cursor:pointer;
     transition:transform .12s ease,box-shadow .15s ease;user-select:none;flex:none;box-shadow:-2px 0 4px rgba(50,50,93,.15),0 1px 2px rgba(50,50,93,.10),0 3px 9px rgba(50,50,93,.09)}
   .hand .card{margin-left:-18px}
@@ -171,7 +201,7 @@
   .card .r{position:absolute;top:3px;left:6px;font-size:16px;font-weight:800;line-height:1;color:#151821;letter-spacing:-1px}
   .card .s{position:absolute;top:20px;left:6px;font-size:12px;font-weight:900;color:#151821;
     -webkit-text-stroke:.5px currentColor;text-shadow:0 0 .3px currentColor}
-  .card .sc{position:absolute;bottom:3px;right:4px;font-size:12px;font-weight:900;color:#151821;transform:rotate(180deg);
+  .card .sc{position:absolute;bottom:3px;right:4px;font-size:12px;font-weight:900;color:#151821;transform:none;
     -webkit-text-stroke:.5px currentColor;text-shadow:0 0 .3px currentColor}
   .card.red .r,.card.red .s,.card.red .sc{color:#dc1b32}
   /* v1.9 手牌密集时进一步收细并隐藏右下镜像索引，避免与邻牌撞墨 */
@@ -208,7 +238,7 @@
 
    /* 基础牌面 · 纯 CSS 零图片；data-face = a 极简 / b 蓝框 / c 经典 */
    .card .big{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:900;line-height:1;opacity:.10;pointer-events:none}
-   .card .rc{display:none;position:absolute;bottom:2px;right:5px;font-size:11px;font-weight:800;transform:rotate(180deg);color:#151821}
+   .card .rc{display:none;position:absolute;bottom:2px;right:5px;font-size:11px;font-weight:800;transform:none;color:#151821}
    .card.red .rc,.card.red .big{color:#dc1b32}
    body[data-face="b"] .card{box-shadow:-2px 0 4px rgba(50,50,93,.15),inset 0 0 0 2px rgba(22,103,255,.18),0 1px 2px rgba(50,50,93,.10)}
    body[data-face="b"] .card .big{opacity:.17;color:#1667ff}
@@ -370,11 +400,10 @@
    .hand.two .card{width:var(--hand-cw,30px);margin-left:0}
    .hand.two .card.sel{transform:translateY(-6px);z-index:5}
    .hand.two .card:hover{transform:translateY(-3px)}
-   body[data-face="c"] .hand.two .card .rc{display:none}
-   body[data-face="c"] .hand.two .card .sc{display:block;font-size:11px;right:3px;bottom:2px}
-   body[data-face="c"] .hand.two .card .big{display:flex;inset:auto;left:2px;top:31px;width:calc(100% - 4px);height:22px;
-     align-items:center;justify-content:center;font-size:17px;font-weight:900;line-height:1;opacity:.80;transform:none}
-   body[data-face="c"] .hand.two .card:not(.red) .big{color:#151821}
+   /* v1.9.3 牌面减负：去掉中间大花色；右下改成正向小索引（平面游戏不做镜像） */
+   body[data-face="c"] .hand.two .card .big{display:none}
+   body[data-face="c"] .hand.two .card .rc{display:block;bottom:14px;right:3px;font-size:10px;transform:none}
+   body[data-face="c"] .hand.two .card .sc{display:block;bottom:3px;right:3px;font-size:10px;transform:none}
    body[data-face="c"] .hand.two .card .r{font-family:Georgia,"Times New Roman",serif;font-size:16px;font-weight:700;letter-spacing:-.5px;left:4px;top:2px}
    body[data-face="c"] .hand.two .card .s{font-size:11px;top:19px;left:4px}
    /* 两行多占约 59px：压缩中间区与日志，并把 stage 交回页面滚动，保证一屏放得下不被裁切 */
@@ -408,13 +437,19 @@
   .bottom .card .jk{font-size:11px}
   .bottom .card .r2{font-size:15px}
   .bottom .card.back::after{font-size:12px}
-  .ovStats{display:none;width:100%;max-width:340px;margin:6px auto 0;font-size:13px;text-align:left;background:#ffffff;border:1px solid var(--glass-bd);border-radius:var(--radius-sm);padding:10px 12px;backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur)}
-  .ovStats h4{margin:0 0 6px;font-size:13px;color:var(--accent)}
-  .ovStats .srow{display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px dashed var(--glass-bd)}
-  .ovStats .srow:last-child{border-bottom:none}
-  .ovStats .srow b{color:var(--accent);font-weight:700}
-  .ovStats .srow .win{color:#0f7a45}
-  .ovStats .srow .lose{color:#c0273e}
+  /* v1.9.3 底牌小卡：只保留左上点数 + 小花色，右下镜像点数/花色与中间大花色一律不显示 */
+  body[data-face="c"] .bottom .card .rc,
+  body[data-face="c"] .bottom .card .sc,
+  body[data-face="c"] .bottom .card .big{display:none}
+  .bottom .card .r{font-size:14px;top:2px;left:3px}
+  .bottom .card .s{font-size:10px;top:18px;left:3px}
+  /* v1.9.3 结算：从 8 行 dev 数据面板改成一句情绪战报 + 爽点标签 */
+  .ovStats{display:none;width:100%;max-width:340px;margin:10px auto 0;text-align:center;background:#ffffff;
+    border:1px solid var(--glass-bd);border-radius:var(--radius-sm);padding:13px 14px;box-shadow:var(--shadow)}
+  .ovStats .ovPunch{font-size:15px;font-weight:800;line-height:1.6;color:var(--txt);letter-spacing:-.2px}
+  .ovStats .ovTags{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px}
+  .ovStats .ovTags span{font-size:12px;font-weight:700;color:#0b5cb8;background:rgba(22,103,255,.08);
+    border:1px solid rgba(22,103,255,.22);border-radius:980px;padding:4px 12px}
   /* ===== 技能简介弹窗（v0.8 · 一个球员一行 · 可滑动下拉列表） ===== */
   .skillModal{position:absolute;inset:0;background:rgba(4,8,16,.78);display:none;align-items:center;justify-content:center;z-index:40;padding:16px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
   .skillModal.on{display:flex;animation:ovIn .28s ease}
@@ -469,7 +504,7 @@
 </div>
 
   <div class="topbar" data-page-node-id="ICFu3aC2YrRYewiiDXPHcz">
-    <div data-page-node-id="xCuiWjasILiAngVsuSvITd"><b data-page-node-id="bjjV5UeT1fEn2t9a7BWEd8">NBA POKER</b> · 可玩原型 <b data-page-node-id="HcTMevaBKC0aZX9hmWQdFe">v1.9.2</b> · 卡面 <b data-page-node-id="DNXWe0lfB2iZi7Ud28ul1I">v0.7</b> <span class="pill" data-page-node-id="JmEb1LyuwGaKbcPI31kENW">｜25 星卡池 ｜ 标准叫分制 ｜ 农民 2打1 协作</span></div>
+    <div data-page-node-id="xCuiWjasILiAngVsuSvITd"><b data-page-node-id="bjjV5UeT1fEn2t9a7BWEd8">NBA POKER</b> · 可玩原型 <b data-page-node-id="HcTMevaBKC0aZX9hmWQdFe">v1.9.4</b> · 卡面 <b data-page-node-id="DNXWe0lfB2iZi7Ud28ul1I">v0.7</b> <span class="pill" data-page-node-id="JmEb1LyuwGaKbcPI31kENW">｜25 星卡池 ｜ 标准叫分制 ｜ 农民 2打1 协作</span></div>
     <button class="mini" id="minBtn" data-page-node-id="EySCTcVn0L1pkF0xgMMba8">▽<span class="btnTxt"> 最小化</span></button>
     <button class="mini" id="skillIntroBtn" data-page-node-id="ATxvLrXTIYvO6LVVtERSS4">📖<span class="btnTxt"> 技能简介</span></button>
     <button class="mini" id="muteBtn" data-page-node-id="WgivqBfEfWRumHUxwRZoFU">🔊</button>
@@ -477,6 +512,7 @@
   </div>
 
   <div class="stage" id="stage" data-page-node-id="DCZ0X0z78tkh79DGUh4Q19">
+    <div id="skillFlash" class="skillFlash" aria-live="polite"></div>
     <div class="seats" data-page-node-id="uUQlpJN5T52XP4CZPytcA9">
       <div class="seat" id="seat1" data-page-node-id="flk7c7W8pmJBF1f3DBSG8s"><div class="nm" data-page-node-id="I67n7wqimpFJBBtUJ3kYUs">🤖 AI 对手 ① <span class="tag" id="tag1" style="display:none" data-page-node-id="6RGu0T6e78AY0AMXZ87sWY">地主</span></div><div class="role" id="role1" data-page-node-id="EPZyPxI20JaHS8fXFjAALO"></div><div class="cnt" id="cnt1" data-page-node-id="snVWHBGoMDIKZJ1J29ykEF">17</div><div class="bubble" id="bub1" data-page-node-id="7ofPfmoBFcBJHX3ObFOyu4"></div></div>
       <div class="seat" id="seat2" data-page-node-id="ESrPj0O4VCcNHWMvEKCTUv"><div class="nm" data-page-node-id="lyQsQ1Oc5fgRQlmenbEyQH">🤖 AI 对手 ② <span class="tag" id="tag2" style="display:none" data-page-node-id="RqSLcGGEXxecXHlOIXtjoV">地主</span></div><div class="role" id="role2" data-page-node-id="taC89Z6FM2Qy3KhkmuwzYH"></div><div class="cnt" id="cnt2" data-page-node-id="D4ZroV9e8ZKHAaQCG4OEAZ">17</div><div class="bubble" id="bub2" data-page-node-id="obLcwWAFDjE37WB9yPHcOj"></div></div>
@@ -839,7 +875,14 @@ const G={
   moveCount:0, humanTurns:0, aiTurns:0, humanStartStrength:0, humanStartBombs:0, bombPlayed:false
 };
 
-function log(t,me){const el=document.getElementById("log");const d=document.createElement("div");if(me)d.className="me";d.textContent=t;el.appendChild(d);el.scrollTop=el.scrollHeight;}
+/* v1.9.4 技能触发可见性：技能日志都带技能名，统一在这里弹一条顶部闪光；
+   手机端日志区只有 62px 高，技能发动很容易被埋掉。结算日志（🏁 开头）不触发。 */
+function flashSkill(txt){
+  const el=document.getElementById("skillFlash"); if(!el) return;
+  el.textContent=txt; el.classList.remove("on"); void el.offsetWidth; el.classList.add("on");
+}
+function log(t,me){const el=document.getElementById("log");const d=document.createElement("div");if(me)d.className="me";d.textContent=t;el.appendChild(d);el.scrollTop=el.scrollHeight;
+  if(t.indexOf("🏁")<0 && /(移花接木|遮天蔽日|造犯规|大心脏|死神降临|and one|luka magic|曼巴时刻|石佛|制霸篮下|球场视野|金鸡独立|百步穿杨|加冕|神之一手|字母轰炸|三分暴雨|关键先生|组织发动机|死亡缠绕|天勾无解|showtime|致命三分|铁血全能|闪电突破)/.test(t)) flashSkill(t);}
 
 /* ---- 入口：S0 入场 → S1 抽卡 ---- */
 /* ===== v0.7.5 音效（WebAudio 合成，无需音频素材；可静音） ===== */
@@ -1146,7 +1189,7 @@ function freshSS(){ return { used:{}, foul:{}, drawn:{}, types:new Set(), pairs:
   // v1.1 扩库新10人状态
   giannisUsed:false, gFoul:0, edwardsUsed:false, edwardsBoost:0, mitchellUsed:false, cunninghamCount:0,
   leonardUsed:false, kareemUsed:false, magicUsed:false, birdUsed:false,   kgUsed:0,
-  wadeUsed:false, frozen:false, kareemImmune:false, recentTypes:[] }; }
+  wadeCount:0, frozen:false, kareemImmune:false, recentTypes:[] }; }
 /* oppAll → rules.js（经 window 全局提供） */
 function isFoe(a,b){ return (a===G.landlord)?(b!==G.landlord):(b===G.landlord); }
 function maxCardOf(h){ return h.length? h.slice().sort((x,y)=>y.v-x.v)[0]:null; }
@@ -1337,7 +1380,7 @@ function commitMove(seat,mv){
     seenAdd(mv.cards);                                   // v0.7：AI 记牌器
     G.lastMove=mv; G.lastSeat=seat; G.passes=0;
     if(mv._bird) G.ss[seat].birdUsed=true;
-    if(mv._wade) G.ss[seat].wadeUsed=true;
+    if(mv._wade) G.ss[seat].wadeCount=(G.ss[seat].wadeCount||0)+1;
     // v1.3 爱德华兹·三分暴雨：本手结束后额外清掉最小牌（每局最多3次），相当于免费多弃一张
     if(G.star[seat]==="edwards" && G.ss[seat].edwardsBoost<3 && G.players[seat].hand.length>0){
       const eh=G.players[seat].hand; const ew=worstCardOf(eh);
@@ -1665,22 +1708,26 @@ function endGame(winner){
   else { ovCard.style.display="none"; }
   const hlEl=document.getElementById("ovHl");
   if(hl.length){ hlEl.style.display="block"; hlEl.textContent="✨ 高光：" + hl.join(" · "); } else hlEl.style.display="none";
-  document.getElementById("ovSub").textContent=`${title} · 最终倍数 ×${G.mult} · 胜者：${G.players[winner].name} · 本局 ${m}:${s<10?"0":""}${s}`;
-  const roles=["你","AI ①","AI ②"].map((nm,x)=>`${nm}·${x===G.landlord?"地主":"农民"}`).join(" ｜ ");
+  /* v1.9.3 结算只留情绪：一句有画面感的胜负文案 + 爽点标签，dev / 过程数据全部移出玩家视野。
+     原先这里还会写一次 ovSub（结果·倍数·胜者·时长），但下方被操作提示覆盖，等于从未显示过。 */
+  const landlordLeft=G.players[G.landlord] ? G.players[G.landlord].hand.length : 0;
+  let punch;
+  if(winner===0){
+    if(!landlordWin && landlordLeft>0) punch=`你是农民，地主还剩 ${landlordLeft} 张牌，你已经收工了`;
+    else if(G.mult>=4) punch=`倍数 ×${G.mult}，这把打得够狠`;
+    else punch="稳稳收下这一局";
+  } else {
+    punch=G.mult>=4 ? `倍数 ×${G.mult}，这把输得也不亏` : "差一口气，下一把抢回来";
+  }
+  const tags=[`🔥 倍数 ×${G.mult}`];
+  if(G.bombCount>0) tags.push(`💥 炸弹 ×${G.bombCount}`);
+  if(G.humanStartBombs>0) tags.push("🃏 起手炸弹");
   const stats=document.getElementById("ovStats");
   stats.style.display="block";
-  stats.innerHTML=`
-    <h4>📊 本局数据面板</h4>
-    <div class="srow"><span>结果</span><b class="${landlordWin?'win':'lose'}">${title}（${G.players[winner].name}）</b></div>
-    <div class="srow"><span>身份</span><b>${roles}</b></div>
-    <div class="srow"><span>倍数构成</span><b>叫${G.bidMax} → 抢×${G.mult/G.bidMax} → 总×${G.mult}</b></div>
-    <div class="srow"><span>炸弹/火箭</span><b>${G.bombCount} 次</b></div>
-    <div class="srow"><span>各家剩余牌</span><b>${G.players.map(p=>p.hand.length).join(' / ')}</b></div>
-    <div class="srow"><span>人类/AI 思考回合</span><b>${G.humanTurns} / ${G.aiTurns}</b></div>
-    <div class="srow"><span>起手强度</span><b>${G.humanStartStrength.toFixed(1)}</b></div>
-    <div class="srow"><span>本局时长</span><b>${m}:${s<10?"0":""}${s}</b></div>`;
+  stats.innerHTML=`<div class="ovPunch">${punch}</div>` +
+    (tags.length ? `<div class="ovTags">${tags.map(t=>`<span>${t}</span>`).join("")}</div>` : "");
   document.getElementById("ovBtns").style.display="flex";
-  document.getElementById("ovSub").textContent="点「再来一局」立即开始新的一局，或「查看牌局」回看本局牌面";
+  document.getElementById("ovSub").textContent="再来一局，或回看本局牌面";
   document.getElementById("overlay").classList.add("on");
   if(winner===0) SFX.win(); else SFX.lose();
   log(`🏁 结束：${title}｜胜者 ${G.players[winner].name}｜倍数 ×${G.mult}${skillNote}｜起手强度 ${G.humanStartStrength.toFixed(1)}｜步数 ${G.moveCount}｜本局 ${m}:${s<10?"0":""}${s}${hl.length?"｜高光 "+hl.join("/"):""}`);
@@ -1711,7 +1758,8 @@ function updateTurnUI(){
   const hd=document.getElementById("hand");
   if(hd) hd.classList.toggle("yourturn", human && G.phase==="play");
 }
-/* ---- v1.6 犯规条 UI：仅字母哥/亚历山大显示，平行四边形四格蓄力条 ---- */
+/* ---- v1.6 犯规条 UI：字母哥/亚历山大显示；v1.9.4 玩家选亚历山大时，
+   两个对手座位各显示一条「被造犯规」条，自己只留文字汇总，避免三份重复 ---- */
 function foulBarState(seat){
   const st=G.star[seat], S=G.ss[seat]; if(!st||!S) return -1;
   if(st==='giannis') return Math.min(4, S.gFoul||0);
@@ -1719,6 +1767,7 @@ function foulBarState(seat){
   return -1;
 }
 function renderFoulBars(){
+  const sgaHuman=G.star[0]==='alexander';
   for(let s=0;s<3;s++){
     const seatEl=document.getElementById("seat"+s); if(!seatEl) continue;
     let row=document.getElementById("foulrow"+s);
@@ -1727,6 +1776,14 @@ function renderFoulBars(){
       /* v1.9：seat0 改英雄位后 .nm 移入 .heroMain，需在其真实父节点内插入（否则 insertBefore 报「not a child」） */
       const host=(nm&&nm.parentElement&&seatEl.contains(nm.parentElement))?nm.parentElement:seatEl;
       if(nm&&nm.parentElement===host&&nm.nextSibling) host.insertBefore(row,nm.nextSibling); else host.appendChild(row); }
+    if(s>0 && sgaHuman){ row.style.display="none"; continue; }
+    if(s===0 && sgaHuman){
+      row.style.display="flex";
+      const S=G.ss[0]||{}, f1=Math.min(4,(S.foul&&S.foul[1])||0), f2=Math.min(4,(S.foul&&S.foul[2])||0);
+      const hb='<span class="foultxt">造犯规 · ① '+f1+'/4 · ② '+f2+'/4</span>';
+      if(row.innerHTML!==hb) row.innerHTML=hb;
+      continue;
+    }
     const n=foulBarState(s);
     if(n<0){ if(row.style.display!=="none") row.style.display="none"; continue; }
     row.style.display="flex";
@@ -1736,24 +1793,54 @@ function renderFoulBars(){
     hb+='</span><span class="foultxt">'+(n>=4?'满':(n+'/4'))+'</span>';
     if(row.innerHTML!==hb) row.innerHTML=hb;
   }
+  renderOpponentFoulBars(sgaHuman);
+}
+/* v1.9.4 对手侧犯规条：数据取 G.ss[0].foul[seat]，满 4 且未抽过 → 高亮「可抽牌」 */
+function renderOpponentFoulBars(on){
+  for(let s=1;s<=2;s++){
+    const seatEl=document.getElementById("seat"+s); if(!seatEl) continue;
+    let el=document.getElementById("oppFoul"+s);
+    if(!el){ el=document.createElement("div"); el.className="oppFoul"; el.id="oppFoul"+s;
+      const bub=seatEl.querySelector(".bubble");
+      if(bub && bub.parentElement===seatEl) seatEl.insertBefore(el,bub); else seatEl.appendChild(el); }
+    if(!on){ el.style.display="none"; continue; }
+    const S=G.ss[0]||{}, f=Math.min(4,(S.foul&&S.foul[s])||0), drawn=!!(S.drawn&&S.drawn[s]);
+    el.style.display="flex";
+    el.className="oppFoul"+(f>=4&&!drawn?" ready":"")+(drawn?" spent":"");
+    let h='<span class="foultxt">被造犯规</span><span class="foulbar'+(f>=4&&!drawn?" full":"")+'">';
+    for(let i=0;i<4;i++) h+='<span class="fb'+(i<f?' on':'')+'"></span>';
+    h+='</span><span class="ofNum">'+(drawn?"已抽":(f>=4?"可抽牌":f+"/4"))+'</span>';
+    if(el.innerHTML!==h) el.innerHTML=h;
+  }
 }
 function renderSkillStatus(){
   const el=document.getElementById("skillTxt"); if(!el) return;
   if(!G.star[0]){el.textContent="";return;}
-  const st=STARS[G.star[0]], S=G.ss[0];
+  /* v1.9.4 状态文案补全：此前 10 个技能落到默认「可用」，玩家看不出一局一次是否还能发动 */
+  const st=STARS[G.star[0]], S=G.ss[0], k=st.key;
   let used="可用";
-  if(st.key==="curry") used=S.curryUsed>=2?"已用 · 2/2":"可用 · "+(2-S.curryUsed)+"/2";
-  else if(st.key==="durant"||st.key==="harden"||st.key==="oNeal"||st.key==="jokic"||st.key==="wembanyama") used=S[st.key+"Used"]?"已用 · 一局一次":"可用 · 一局一次";
-  else if(st.key==="lebron") used=S.lebronUsed?"已用 · 一局一次":"可用 · 一局一次";
-  else if(st.key==="doncic") used=S.doncicUsed?"已触发":"待命（打出3+牌型触发）";
-  else if(st.key==="duncan") used="免疫（无上限）";
-  else if(st.key==="giannis") used=`造犯规 ${S.gFoul||0}/4 · ${S.giannisUsed?'已发动':'待发动'}`;
-  else if(st.key==="alexander"){ const f=Object.values(S.foul).reduce((a,b)=>a+b,0); used=`犯规累计 ${f} · 抽取${Object.keys(S.drawn).length}次`; }
-  else if(st.key==="jordan"){ const wcs=G.players[0].hand.filter(c=>(S.wildIds||[]).includes(c.id)); used=wcs.length?`万能牌：${wcs.map(c=>LABEL[c.v]||c.label).join("、")}（点击无效，开局已指定）`:"未指定"; }
-  else if(st.key==="kidd") used="视野常驻";
-  else if(st.key==="nowitzki") used=`累计对子 ${S.pairs} · 已弃 ${S.discarded}`;
-  else if(st.key==="brunson") used="残局+1级常驻";
-  else if(st.key==="kobe") used="终局最大常驻";
+  if(k==="curry") used=S.curryUsed>=2?"已用 · 2/2":"可用 · "+(2-S.curryUsed)+"/2";
+  else if(k==="kg") used=(S.kgUsed||0)>=2?"已用 · 2/2":"可用 · "+(2-(S.kgUsed||0))+"/2";
+  else if(k==="durant") used=S.durantUsed?"已用 · 一局一次":(S.retakeReady?"可发动 · 弃大牌重夺出牌权":"待触发 · 被压时可重夺");
+  else if(k==="harden"||k==="oNeal"||k==="jokic"||k==="lebron"||k==="mitchell"||k==="magic"||k==="leonard") used=S[k+"Used"]?"已用 · 一局一次":"可用 · 一局一次";
+  else if(k==="wembanyama") used=S.wembyUsed?"已用 · 一局一次":"可用 · 一局一次";
+  else if(k==="doncic") used=S.doncicUsed?"已触发":"待命 · 已打出 "+(S.types?S.types.size:0)+" 种牌型";
+  else if(k==="edwards") used=`合成对子 ${S.edwardsBoost||0}/3 次`;
+  else if(k==="wade") used=`常驻 · 本局已触发 ${S.wadeCount||0} 次`;
+  else if(k==="cunningham") used=`常驻 · 本局已弃 ${S.cunninghamCount||0} 张`;
+  else if(k==="kareem") used=S.kareemUsed?"已发动 · 单张化对":"待发动 · 单张可当对子";
+  else if(k==="bird") used="常驻 · 三带可带两张不同点单张";
+  else if(k==="duncan") used="免疫（无上限）";
+  else if(k==="giannis") used=`造犯规 ${S.gFoul||0}/4 · ${S.giannisUsed?'已发动':'待发动'}`;
+  else if(k==="alexander"){
+    const f1=Math.min(4,(S.foul&&S.foul[1])||0), f2=Math.min(4,(S.foul&&S.foul[2])||0);
+    used=`对手① ${f1}/4 · 对手② ${f2}/4 · 已抽 ${Object.keys(S.drawn||{}).length} 次`;
+  }
+  else if(k==="jordan"){ const wcs=G.players[0].hand.filter(c=>(S.wildIds||[]).includes(c.id)); used=wcs.length?`万能牌：${wcs.map(c=>LABEL[c.v]||c.label).join("、")}（点击无效，开局已指定）`:"未指定"; }
+  else if(k==="kidd") used="视野常驻";
+  else if(k==="nowitzki") used=`累计对子 ${S.pairs} · 已弃 ${S.discarded}`;
+  else if(k==="brunson") used=G.players[0].hand.length<=5?"残局加成已激活 · 全部 +1 级":"常驻 · 手牌≤5 张时 +1 级";
+  else if(k==="kobe") used="终局最大常驻";
   el.textContent=`技能：${st.skill}（${used}）`;
 }
 function renderHands(){
@@ -1871,17 +1958,34 @@ function renderHand(){
 
 }
 function renderCounts(){[0,1,2].forEach(s=>document.getElementById("cnt"+s).textContent=G.players[s].hand.length);}
+/* v1.9.4 韦德·闪电突破：打出的牌从原点数翻转成 +1 点数。
+   wadeAnimKey 防止 renderAll() 反复重绘时动画重播；重绘后直接显示变形终态。 */
 function renderLast(){
   const el=document.getElementById("lastMove");el.innerHTML="";
-  if(G.lastMove){G.lastMove.cards.forEach(c=>{
-    const isWild=G.ss[G.lastSeat] && G.ss[G.lastSeat].wildIds && G.ss[G.lastSeat].wildIds.includes(c.id);
-    const k=document.createElement("div");k.className="card"+(c.red?" red":"")+(c.phantom?" phantom":"")+(isWild?" wild":"");
-    k.style.cursor="default";
-    k.innerHTML=cardHTML(c);
-    el.appendChild(k);
-  });
+  if(G.lastMove){
+    const wade=!!G.lastMove._wade;
+    const animate=wade && G.lastSeat===0 && (window._wadeAnimKey||-1)!==G.moveCount;
+    if(wade && G.lastSeat===0) window._wadeAnimKey=G.moveCount;
+    G.lastMove.cards.forEach(c=>{
+      const isWild=G.ss[G.lastSeat] && G.ss[G.lastSeat].wildIds && G.ss[G.lastSeat].wildIds.includes(c.id);
+      const k=document.createElement("div");
+      k.className="card"+(c.red?" red":"")+(c.phantom?" phantom":"")+(isWild?" wild":"")+(wade?" wadeCard":"");
+      k.style.cursor="default";
+      if(wade){
+        const boosted={...c, v:(c.v<=10?Math.min(11,c.v+1):c.v)};
+        boosted.label=LABEL[boosted.v]||c.label;
+        k.innerHTML=animate?`<div class="wadeOld">${cardHTML(c)}</div><div class="wadeNew">${cardHTML(boosted)}</div>`:cardHTML(boosted);
+        k.title="⚡ 闪电突破 · 点数 +1";
+      } else k.innerHTML=cardHTML(c);
+      el.appendChild(k);
+    });
+    if(wade){
+      const tag=document.createElement("div");
+      tag.className="wadeTag"; tag.textContent="⚡ 闪电突破 · 点数 +1";
+      el.appendChild(tag);
+    }
     // v1.5 贾巴尔·天勾无解：单张化对 —— 补一张同点数幻影牌，黄色光圈 + "补"角标注明非真实手牌
-    if(G.lastMove && G.lastMove._kareem && G.lastMove.type==="pair" && G.lastMove.cards.length===1){
+    if(G.lastMove._kareem && G.lastMove.type==="pair" && G.lastMove.cards.length===1){
       const src=G.lastMove.cards[0];
       const sk=document.createElement("div");
       sk.className="card phantom synth"+(src.red?" red":"");
@@ -1893,23 +1997,11 @@ function renderLast(){
   }
   renderDuel();
 }
-/* v1.9 三家「上一手」面板：填充中间区死区，让牌桌中央持续可读（不再只靠一闪而过的气泡） */
+/* v1.9.3 三家「上一手」方框已取消：手机端三个小框信息密度高、决策价值低，
+   直接不生成 DOM，把中间区还给牌桌留白。保留函数签名，避免 renderLast() 调用点改动。 */
 function renderDuel(){
   const el=document.getElementById("duel"); if(!el) return;
-  if(G.phase!=="play" && G.phase!=="over"){ el.style.display="none"; el.innerHTML=""; return; }
-  el.style.display="";
-  const order=[1,2,0];
-  el.innerHTML=order.map(function(s){
-    const p=G.players[s]; if(!p) return "";
-    const isL=(G.landlord===s);
-    const rec=G.seatLast?G.seatLast[s]:null;
-    let val="—", cls="";
-    if(rec==="pass"){ val="不出"; cls="pass"; }
-    else if(rec && rec.cards){ val=moveName(rec); if(rec.type==="bomb"||rec.type==="rocket") cls="bomb"; }
-    const nm=(s===0?"你":(s===1?"对手①":"对手②"))+(isL?" · 地主":"");
-    const lead=(G.lastSeat===s && G.lastMove)?" lead":"";
-    return '<div class="duelCol'+(s===0?" me":"")+lead+'"><div class="duelName">'+nm+'</div><div class="duelVal '+cls+'">'+val+'</div></div>';
-  }).join("");
+  el.style.display="none"; el.innerHTML="";
 }
 function renderMult(){document.getElementById("multTxt").textContent="倍数 ×"+G.mult;}
 function renderClock(){const m=Math.floor(G.elapsed/60),s=G.elapsed%60;document.getElementById("clockTxt").textContent="本局 "+m+":"+(s<10?"0":"")+s;}

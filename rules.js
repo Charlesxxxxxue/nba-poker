@@ -61,7 +61,7 @@
   };
   const STAR_IMG = {
     curry: "star_cards/V1_curry.jpg", jordan: "star_cards/V1_jordan.jpg",
-    lebron: "star_cards/V1_lebron.jpg", wemby: "star_cards/V1_wemby.jpg",
+    lebron: "star_cards/V1_lebron.jpg", wembanyama: "star_cards/V1_wemby.jpg",
     edwards: "star_cards/V1_edwards.jpg", jokic: "star_cards/V1_jokic.jpg",
     alexander: "star_cards/V1_alexander.jpg", brunson: "star_cards/V1_brunson.jpg",
     durant: "star_cards/V1_durant.jpg", harden: "star_cards/V1_harden.jpg",
