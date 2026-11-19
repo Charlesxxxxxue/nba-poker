@@ -3,8 +3,8 @@
 <head data-page-node-id="D6OXVWtNQzfFHEl8yeZeEv">
 <meta charset="UTF-8" data-page-node-id="GqUavfoCHzaA4SQOFX9HJY">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" data-page-node-id="HLbLnKHQUaZq0cvHfzMR8X">
-<title>NBA Poker · 可玩原型 v1.9.7 · 卡面 V1.0（S4 泼墨 · 25 星 · 无水印）</title>
-<!-- build:20261119e · 邓肯免疫扩充 / 文班王炸不可抵消 / 奥尼尔与基德真实实装 -->
+<title>NBA Poker · 可玩原型 v1.9.8 · 卡面 V1.0（S4 泼墨 · 25 星 · 无水印）</title>
+<!-- build:20261119f · 新增试玩反馈卡：纯前端一键复制，零后端零上传 -->
 <!-- 内联图标：避免浏览器默认请求 /favicon.ico 与 /apple-touch-icon.png 产生 404 控制台噪音 -->
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23070c18'/%3E%3Ccircle cx='32' cy='32' r='19' fill='%23d98b3a'/%3E%3Cg fill='none' stroke='%23070c18' stroke-width='2.6'%3E%3Cpath d='M32 13v38M13 32h38'/%3E%3Cpath d='M18.5 18.5c8 6 8 21 0 27M45.5 18.5c-8 6-8 21 0 27'/%3E%3C/g%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23070c18'/%3E%3Ccircle cx='32' cy='32' r='19' fill='%23d98b3a'/%3E%3Cg fill='none' stroke='%23070c18' stroke-width='2.6'%3E%3Cpath d='M32 13v38M13 32h38'/%3E%3Cpath d='M18.5 18.5c8 6 8 21 0 27M45.5 18.5c-8 6-8 21 0 27'/%3E%3C/g%3E%3C/svg%3E">
@@ -430,6 +430,26 @@
   @media (max-width:360px){
     .seat .bubble{display:none}
   }
+  /* ===== v1.9.8 试玩反馈卡：纯前端一键复制，不上传任何内容 ===== */
+  .fbCard{width:100%;max-width:min(430px, calc(100vw - 36px));max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+    background:var(--glass);border:1px solid var(--glass-bd);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:16px;display:flex;flex-direction:column;gap:10px}
+  .fbHead{display:flex;align-items:center;justify-content:space-between;font-size:17px;font-weight:800;color:var(--accent)}
+  .fbHead .fbX{border:0;background:transparent;font-size:23px;line-height:1;color:var(--dim);cursor:pointer;padding:0 4px}
+  .fbLead{font-size:12px;line-height:1.6;color:var(--dim)}
+  .fbMeta{font-size:11px;line-height:1.7;color:var(--txt);background:rgba(22,103,255,.05);
+    border:1px solid rgba(22,103,255,.16);border-radius:9px;padding:8px 10px;
+    display:grid;grid-template-columns:auto 1fr;column-gap:8px}
+  .fbMeta .k{color:var(--dim);white-space:nowrap}
+  .fbMeta .v{font-weight:700;word-break:break-word}
+  .fbCard textarea{width:100%;min-height:104px;resize:vertical;border:1px solid var(--glass-bd);
+    border-radius:9px;padding:10px;font-family:inherit;font-size:13px;line-height:1.55;
+    color:var(--txt);background:#fbfdff;outline:none}
+  .fbCard textarea:focus{border-color:var(--accent)}
+  .fbBtns{display:flex;gap:8px}
+  .fbBtns .btn{flex:1;padding:10px}
+  .fbTip{font-size:11px;line-height:1.5;color:var(--dim);text-align:center}
+  .fbTip.ok{color:#0b7a3b;font-weight:700}
   /* ===== Phase 6 计时遥测面板（dev） ===== */
   .tele{position:fixed;right:8px;top:54px;width:min(320px,92vw);max-height:78vh;overflow:auto;
     border:1px solid var(--glass-bd);border-radius:var(--radius-sm);background:var(--glass);padding:12px;z-index:30;display:none;font-size:12px;backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);box-shadow:var(--lift)}
@@ -514,10 +534,25 @@
   </div>
 </div>
 
+<div id="fbModal" class="pickModal" onclick="if(event.target===this)closeFbModal()">
+  <div class="fbCard">
+    <div class="fbHead"><span>💬 说两句？</span><button class="fbX" onclick="closeFbModal()" aria-label="关闭">×</button></div>
+    <div class="fbLead">卡顿、看不清、技能没触发，或者单纯想吐槽都行。写完点「一键复制」，粘到企微群 / 单聊发给 Charles 就完事。</div>
+    <div class="fbMeta" id="fbMeta"></div>
+    <textarea id="fbText" placeholder="例如：iPhone 上第二行手牌被切掉了 / 韦德变形没看到 / 基德分配面板按钮点不动…"></textarea>
+    <div class="fbBtns">
+      <button class="btn" onclick="closeFbModal()">先不了</button>
+      <button class="btn go" id="fbCopy" onclick="copyFeedback()">一键复制反馈</button>
+    </div>
+    <div class="fbTip" id="fbTip">不会上传任何内容 · 只带设备类型与对局状态，不含身份信息</div>
+  </div>
+</div>
+
   <div class="topbar" data-page-node-id="ICFu3aC2YrRYewiiDXPHcz">
-    <div data-page-node-id="xCuiWjasILiAngVsuSvITd"><b data-page-node-id="bjjV5UeT1fEn2t9a7BWEd8">NBA POKER</b> · 可玩原型 <b data-page-node-id="HcTMevaBKC0aZX9hmWQdFe">v1.9.7</b> · 卡面 <b data-page-node-id="DNXWe0lfB2iZi7Ud28ul1I">V1.0</b> <span class="pill" data-page-node-id="JmEb1LyuwGaKbcPI31kENW">｜25 星卡池 ｜ 标准叫分制 ｜ 农民 2打1 协作</span></div>
+    <div data-page-node-id="xCuiWjasILiAngVsuSvITd"><b data-page-node-id="bjjV5UeT1fEn2t9a7BWEd8">NBA POKER</b> · 可玩原型 <b data-page-node-id="HcTMevaBKC0aZX9hmWQdFe">v1.9.8</b> · 卡面 <b data-page-node-id="DNXWe0lfB2iZi7Ud28ul1I">V1.0</b> <span class="pill" data-page-node-id="JmEb1LyuwGaKbcPI31kENW">｜25 星卡池 ｜ 标准叫分制 ｜ 农民 2打1 协作</span></div>
     <button class="mini" id="minBtn" data-page-node-id="EySCTcVn0L1pkF0xgMMba8">▽<span class="btnTxt"> 最小化</span></button>
     <button class="mini" id="skillIntroBtn" data-page-node-id="ATxvLrXTIYvO6LVVtERSS4">📖<span class="btnTxt"> 技能简介</span></button>
+    <button class="mini" id="fbBtn" title="试玩反馈">💬<span class="btnTxt"> 反馈</span></button>
     <button class="mini" id="muteBtn" data-page-node-id="WgivqBfEfWRumHUxwRZoFU">🔊</button>
     <button class="mini" id="teleBtn" data-page-node-id="PfM0pxENfSpe0m0DDHSsrP">📊<span class="btnTxt"> 数据</span></button>
   </div>
@@ -2168,6 +2203,124 @@ function exportTelemetry(){
 }
 function clearTelemetry(){ try{ localStorage.removeItem(TELE_KEY); }catch(e){} showTelemetry(); }
 
+/* ============ v1.9.8 试玩反馈卡：纯前端生成 + 一键复制，零后端 / 零上传 / 零身份信息 ============ */
+const FB_VER="v1.9.8", FB_BUILD="20261119f";
+function fbDevice(){
+  const ua=navigator.userAgent||"";
+  let os="其他设备";
+  if(/iPhone|iPad|iPod/.test(ua)) os="iPhone / iPad · iOS";
+  else if(/Android/.test(ua)) os="Android";
+  else if(/Mac OS X|Macintosh/.test(ua)) os="Mac";
+  else if(/Windows/.test(ua)) os="Windows";
+  let browser="浏览器";
+  if(/MicroMessenger/.test(ua)) browser=(/wxwork/i.test(ua)?"企业微信":"微信")+"内置";
+  else if(/Edg\//.test(ua)) browser="Edge";
+  else if(/Chrome\//.test(ua)) browser="Chrome";
+  else if(/Safari\//.test(ua)) browser="Safari";
+  else if(/Firefox\//.test(ua)) browser="Firefox";
+  return os+" · "+browser;
+}
+function fbPhaseName(p){
+  return ({pick:"S1 选球星",bid:"叫分阶段",double:"加倍阶段",kiddAssign:"基德·分配底牌",play:"出牌阶段",over:"本局结算"})[p]||p||"未开始";
+}
+function fbContext(){
+  let star="未选择", hand=0;
+  try{ if(G.star&&G.star[0]&&STARS[G.star[0]]) star=STARS[G.star[0]].name+" · "+STARS[G.star[0]].skill; }catch(e){}
+  try{ hand=(G.players&&G.players[0]&&G.players[0].hand)?G.players[0].hand.length:0; }catch(e){}
+  let logs=[];
+  try{
+    const el=document.getElementById("log");
+    if(el) logs=Array.from(el.children).slice(-5).map(d=>(d.textContent||"").trim()).filter(Boolean);
+  }catch(e){}
+  let phase="未开始";
+  try{ phase=fbPhaseName(G.phase); }catch(e){}
+  return {star:star,hand:hand,logs:logs,phase:phase};
+}
+function fbRows(){
+  const c=fbContext();
+  const w=window.innerWidth||0, h=window.innerHeight||0, dpr=window.devicePixelRatio||1;
+  return [
+    ["版本", FB_VER+" · "+FB_BUILD],
+    ["设备", fbDevice()],
+    ["屏幕", w+" × "+h+" · DPR "+dpr],
+    ["阶段", c.phase+" · 手牌 "+c.hand+" 张"],
+    ["球星", c.star],
+  ];
+}
+function renderFbMeta(){
+  const el=document.getElementById("fbMeta"); if(!el) return;
+  el.innerHTML="";
+  fbRows().forEach(r=>{
+    const k=document.createElement("span"); k.className="k"; k.textContent=r[0];
+    const v=document.createElement("span"); v.className="v"; v.textContent=r[1];
+    el.appendChild(k); el.appendChild(v);
+  });
+}
+function buildFeedback(){
+  const c=fbContext();
+  const w=window.innerWidth||0, h=window.innerHeight||0, dpr=window.devicePixelRatio||1;
+  const ta=document.getElementById("fbText");
+  const opinion=ta?String(ta.value||"").trim():"";
+  const L=[];
+  L.push("【NBA Poker 试玩反馈】");
+  L.push("版本："+FB_VER+"（build "+FB_BUILD+"）");
+  L.push("时间："+new Date().toLocaleString("zh-CN",{hour12:false}));
+  L.push("设备："+fbDevice());
+  L.push("屏幕："+w+" × "+h+" · DPR "+dpr);
+  L.push("阶段："+c.phase+" · 手牌 "+c.hand+" 张");
+  L.push("球星："+c.star);
+  L.push("最近牌局："+(c.logs.length?("\n  · "+c.logs.join("\n  · ")):"（暂无）"));
+  L.push("-----");
+  L.push("反馈："+(opinion||"（未填写）"));
+  L.push("-----");
+  L.push("（本条只含设备类型与对局状态，不含任何身份信息）");
+  return L.join("\n");
+}
+function fbLegacyCopy(s){
+  try{
+    const t=document.createElement("textarea");
+    t.value=s; t.setAttribute("readonly","");
+    t.style.cssText="position:fixed;left:-9999px;top:0;opacity:0";
+    document.body.appendChild(t);
+    t.focus(); t.select(); t.setSelectionRange(0,s.length);
+    const ok=document.execCommand("copy");
+    document.body.removeChild(t);
+    return ok;
+  }catch(e){ return false; }
+}
+function fbCopyText(s){
+  try{
+    if(navigator.clipboard && window.isSecureContext){
+      return navigator.clipboard.writeText(s).then(()=>true).catch(()=>fbLegacyCopy(s));
+    }
+  }catch(e){}
+  return Promise.resolve(fbLegacyCopy(s));
+}
+function openFbModal(){
+  const m=document.getElementById("fbModal"); if(!m) return;
+  renderFbMeta();
+  const tip=document.getElementById("fbTip");
+  if(tip){ tip.className="fbTip"; tip.textContent="不会上传任何内容 · 只带设备类型与对局状态，不含身份信息"; }
+  const btn=document.getElementById("fbCopy"); if(btn) btn.textContent="一键复制反馈";
+  m.classList.add("on");
+}
+function closeFbModal(){ const m=document.getElementById("fbModal"); if(m) m.classList.remove("on"); }
+function copyFeedback(){
+  const txt=buildFeedback();
+  const tip=document.getElementById("fbTip"), btn=document.getElementById("fbCopy");
+  fbCopyText(txt).then(ok=>{
+    if(ok){
+      if(btn) btn.textContent="✅ 已复制";
+      if(tip){ tip.className="fbTip ok"; tip.textContent="已复制！粘到企微群 / 单聊发给 Charles 就行，设备与对局状态已经带上了"; }
+      setTimeout(()=>{ if(btn) btn.textContent="一键复制反馈"; },2400);
+    } else {
+      if(tip){ tip.className="fbTip"; tip.textContent="自动复制没成功，全文已放进输入框，长按全选复制即可"; }
+      const ta=document.getElementById("fbText");
+      if(ta){ ta.value=txt; ta.focus(); ta.select(); }
+    }
+  });
+}
+
 /* ============ 绑定 ============ */
 document.getElementById("minBtn").onclick=()=>{
   const o=document.getElementById("overlay");
@@ -2231,6 +2384,7 @@ document.getElementById("muteBtn").onclick=()=>{ SFX.muted=!SFX.muted; document.
   syncExpandBtn();
 })();
 document.getElementById("skillIntroBtn").onclick=()=>document.getElementById("skillModal").classList.add("on");
+document.getElementById("fbBtn").onclick=openFbModal;
 /* v1.9 点击英雄位立绘 → 打开球星技能简介（复用现有弹窗） */
 (function(){ const c=document.getElementById("heroCard"); if(c) c.onclick=()=>document.getElementById("skillModal").classList.add("on"); })();
 document.getElementById("skillModalClose").onclick=()=>document.getElementById("skillModal").classList.remove("on");
