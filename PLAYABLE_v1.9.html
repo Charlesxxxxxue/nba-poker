@@ -3,8 +3,8 @@
 <head data-page-node-id="D6OXVWtNQzfFHEl8yeZeEv">
 <meta charset="UTF-8" data-page-node-id="GqUavfoCHzaA4SQOFX9HJY">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" data-page-node-id="HLbLnKHQUaZq0cvHfzMR8X">
-<title>NBA Poker · 可玩原型 v1.9.5 · 卡面 V1.0（S4 泼墨 · 25 星 · 无水印）</title>
-<!-- build:20261119c · 爱德华兹技能规则对齐：被动 · 1局3次免费清掉最小牌 -->
+<title>NBA Poker · 可玩原型 v1.9.6 · 卡面 V1.0（S4 泼墨 · 25 星 · 无水印）</title>
+<!-- build:20261119d · 25 星技能文案全量对齐：机制重做同步 / 未实装项如实标注 -->
 <!-- 内联图标：避免浏览器默认请求 /favicon.ico 与 /apple-touch-icon.png 产生 404 控制台噪音 -->
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23070c18'/%3E%3Ccircle cx='32' cy='32' r='19' fill='%23d98b3a'/%3E%3Cg fill='none' stroke='%23070c18' stroke-width='2.6'%3E%3Cpath d='M32 13v38M13 32h38'/%3E%3Cpath d='M18.5 18.5c8 6 8 21 0 27M45.5 18.5c-8 6-8 21 0 27'/%3E%3C/g%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23070c18'/%3E%3Ccircle cx='32' cy='32' r='19' fill='%23d98b3a'/%3E%3Cg fill='none' stroke='%23070c18' stroke-width='2.6'%3E%3Cpath d='M32 13v38M13 32h38'/%3E%3Cpath d='M18.5 18.5c8 6 8 21 0 27M45.5 18.5c-8 6-8 21 0 27'/%3E%3C/g%3E%3C/svg%3E">
@@ -504,7 +504,7 @@
 </div>
 
   <div class="topbar" data-page-node-id="ICFu3aC2YrRYewiiDXPHcz">
-    <div data-page-node-id="xCuiWjasILiAngVsuSvITd"><b data-page-node-id="bjjV5UeT1fEn2t9a7BWEd8">NBA POKER</b> · 可玩原型 <b data-page-node-id="HcTMevaBKC0aZX9hmWQdFe">v1.9.5</b> · 卡面 <b data-page-node-id="DNXWe0lfB2iZi7Ud28ul1I">V1.0</b> <span class="pill" data-page-node-id="JmEb1LyuwGaKbcPI31kENW">｜25 星卡池 ｜ 标准叫分制 ｜ 农民 2打1 协作</span></div>
+    <div data-page-node-id="xCuiWjasILiAngVsuSvITd"><b data-page-node-id="bjjV5UeT1fEn2t9a7BWEd8">NBA POKER</b> · 可玩原型 <b data-page-node-id="HcTMevaBKC0aZX9hmWQdFe">v1.9.6</b> · 卡面 <b data-page-node-id="DNXWe0lfB2iZi7Ud28ul1I">V1.0</b> <span class="pill" data-page-node-id="JmEb1LyuwGaKbcPI31kENW">｜25 星卡池 ｜ 标准叫分制 ｜ 农民 2打1 协作</span></div>
     <button class="mini" id="minBtn" data-page-node-id="EySCTcVn0L1pkF0xgMMba8">▽<span class="btnTxt"> 最小化</span></button>
     <button class="mini" id="skillIntroBtn" data-page-node-id="ATxvLrXTIYvO6LVVtERSS4">📖<span class="btnTxt"> 技能简介</span></button>
     <button class="mini" id="muteBtn" data-page-node-id="WgivqBfEfWRumHUxwRZoFU">🔊</button>
@@ -930,10 +930,11 @@ function newGame(){
 }
 
 let pickSelKey=null;
-/* v1.9.5 选将标签：次数型技能直接读 cd，避免把「1局3次」显示成「常驻 / 一局一次」 */
+/* v1.9.6 选将标签：次数型技能直接读 cd；未实装技能直接显示状态，避免误导 */
 function starTypeLabel(st, sep){
   const base=st.type==='active'?'主动':(st.type==='reactive'?'反应':(st.type==='passive+active'?'被动+主动':'被动'));
   const cd=st.cd||'';
+  if(/未实装/.test(cd)) return cd;
   const short=/^(1局\d次(触发)?|每局指定\d张)$/.test(cd) ? cd.replace('触发','') : '';
   return short ? base+sep+short : base+sep+(base.indexOf('被动')===0?'常驻':'一局一次');
 }
@@ -1181,7 +1182,7 @@ function startPlay(){
   nextTurn();
 }
 /* ============================================================================
- *  NBA Poker · 15 球星技能系统（v0.7 忠实实现，2026-08-03）
+ *  NBA Poker · 25 球星技能系统（v1.6 机制基线 · v1.9.6 文案对齐）
  *  机制/边界见 02_mecha_gameplay/PLAYER_SKILLS_v0.2.md（四-G 命名总表）
  *  SKILLS_OFF=true 时全部技能失效（门禁 naive 对照）
  *  人类与 AI 座均从 STARS 池抽星，机制完全通用（autoPlaySeat 统一驱动）
@@ -1210,7 +1211,7 @@ function genAllForSeat(seat){
   if(st==='brunson' && hand.length<=5){ const tmp=hand.map(c=>({...c,v:remapLevel(c.v)})); out.push(...genAllMoves(tmp).map(mv=>({...mv,cards:mv.cards.map(mc=>hand.find(h=>h.id===mc.id))}))); }
   if(st==='jordan' && G.ss[seat].wildIds.length){ const wid=G.ss[seat].wildIds;
     for(let r1=3;r1<=15;r1++) for(let r2=r1;r2<=15;r2++){ const tmp=hand.map(c=> c.id===wid[0]?{...c,v:r1}: (wid[1]!==undefined && c.id===wid[1]?{...c,v:r2}:c)); out.push(...genAllMoves(tmp).map(mv=>({...mv,cards:mv.cards.map(mc=>hand.find(h=>h.id===mc.id))}))); } }
-  // v1.1 扩库：韦德·闪电突破：点数<8的单牌默认+1（封顶8）
+  // v1.4 韦德·闪电突破：所有点数≤10的牌各+1（封顶J），额外生成一组可选走法
   if(st==='wade'){ const tmp=hand.map(c=>({...c, v:(c.v<=10? Math.min(11,c.v+1):c.v)})); out.push(...genAllMoves(tmp).map(mv=>({...mv,_wade:true,cards:mv.cards.map(mc=>hand.find(h=>h.id===mc.id))}))); }
   // 爱德华兹·三分暴雨（v1.3 最终版）：合成对与点数+2均已废弃；当前为每次出牌后免费清最小牌（1局3次），见 commitMove
   // 伯德·致命三分：三带两单（两张不同点单张）
@@ -1221,12 +1222,12 @@ function genAllForSeat(seat){
 function genBeatingForSeat(seat,prev){
   const hand=G.players[seat].hand, st=G.star[seat], out=[];
   out.push(...genBeating(hand,prev));
-  // v1.4 贾巴尔改为主动技能，原被动免疫（高对不可压）已移除
+  // v1.5 贾巴尔·天勾无解已改回被动：压牌时单张可当对子使用
   if(SKILLS_OFF) return out;
   if(st==='brunson' && hand.length<=5){ const tmp=hand.map(c=>({...c,v:remapLevel(c.v)})); out.push(...genBeating(tmp,prev).map(mv=>({...mv,cards:mv.cards.map(mc=>hand.find(h=>h.id===mc.id))}))); }
   if(st==='jordan' && G.ss[seat].wildIds.length){ const wid=G.ss[seat].wildIds;
     for(let r1=3;r1<=15;r1++) for(let r2=r1;r2<=15;r2++){ const tmp=hand.map(c=> c.id===wid[0]?{...c,v:r1}: (wid[1]!==undefined && c.id===wid[1]?{...c,v:r2}:c)); out.push(...genBeating(tmp,prev).map(mv=>({...mv,cards:mv.cards.map(mc=>hand.find(h=>h.id===mc.id))}))); } }
-  // v1.1 扩库：韦德·闪电突破：低牌+1（跟牌同样生效）
+  // v1.4 韦德·闪电突破：跟牌同样生成一组≤10牌各+1的可选走法
   if(st==='wade'){ const tmp=hand.map(c=>({...c, v:(c.v<=10? Math.min(11,c.v+1):c.v)})); out.push(...genBeating(tmp,prev).map(mv=>({...mv,_wade:true,cards:mv.cards.map(mc=>hand.find(h=>h.id===mc.id))}))); }
   // 爱德华兹·三分暴雨（v1.3 最终版）：跟牌不再生成合成对；1局3次免费清牌统一在 commitMove 结算
   // v1.5 贾巴尔·天勾无解（被动·重做）：压牌时，你的任意单张可当作对子使用（1张压2张，牌数摆动型）
@@ -1308,7 +1309,7 @@ function autoPlaySeat(seat, prev){
     // v1.2 爱德华兹旧版「合成对」已废弃：当前机制不生成额外牌型，收益在 commitMove 出牌后清牌
     if(st==='curry' && S.curryUsed<2){ const t=curryReorgMove(seat); if(t){ S.curryUsed++; commitMove(seat,t); return; } }
     if(st==='harden' && !S.hardenUsed && mv){ const m2=hardenPick(seat,mv); if(m2){ G._noAdvance=true; commitMove(seat,mv); S.hardenUsed=true; commitMove(seat,m2); return; } }
-    // v1.5 扬尼斯·字母轰炸：v1.4「领出点数+3」已废弃（Δ仅+1.25，点数强化不改变手牌数量）。新机制见 commitMove 收牌分支（赢得出牌权后弃一张）
+    // v1.6 扬尼斯·字母轰炸：旧「收牌后弃牌」已废弃；当前为被对手压牌时造犯规，满4点弃一张最小牌并清零（见 commitMove 被压分支）
     if(mv){ commitMove(seat,mv); return; }
     applyMove(seat,null); return;
   } else { // ---------- 跟牌 ----------
@@ -1327,7 +1328,7 @@ function postMoveSkills(seat,mv){
   if(mv.type==='pair'||mv.type==='double') S.pairs += (mv.type==='double'? mv.len : 1);
   if(G.star[seat]==='doncic'){ S.types.add(mv.type); doncicMaybeCopy(seat); }
   if(G.star[seat]==='nowitzki'){ nowitzkiMaybeDiscard(seat); }
-  // v1.3 坎宁安·组织发动机已重做：触发逻辑移至 commitMove 的"收牌回合"（见 G.passes>=2 块），无跳过代价、每局最多2次
+  // v1.3 坎宁安·组织发动机已重做：触发逻辑在 applyMove 的收牌分支（G.passes>=2），无跳过代价、每局最多3次
 }
 
 function nextTurn(){
@@ -1363,15 +1364,15 @@ function commitMove(seat,mv){
   G.moveCount++;
   if(seat===0) G.humanTurns++; else G.aiTurns++;
   if(mv){
-    // 文班·遮天蔽日：对手炸弹/火箭 → 抵消（视作对手不出，王炸不可抵消）
+    // 文班·遮天蔽日：当前代码对手炸弹/王炸均抵消（视作对手不出）；v1.9.6 文案按代码对齐
     if((mv.type==="bomb"||mv.type==="rocket") && G.lastSeat>=0){
       const W=oppAll(seat).find(s=>G.star[s]==="wembanyama" && !G.ss[s].wembyUsed && isFoe(s,seat));
       if(W!==undefined){ G.ss[W].wembyUsed=true; log(`🚫 ${G.players[W].name}·遮天蔽日：抵消 ${G.players[seat].name} 的${mv.type==="rocket"?"王炸":"炸弹"}`); commitMove(seat,null); return; }
     }
-    // v1.2 伦纳德·死亡缠绕：原「对手炸弹截取」触发率≈0（炸弹太稀有），已重做为下方「压住对手截牌」（见 victim 计算后）
+    // v1.3 伦纳德·死亡缠绕：原「对手炸弹截取」触发率≈0，已重做为下方「压住对手截最高非王牌」（见 victim 计算后）
 
     const victim=G.lastSeat;                                   // 被本手压制的上家（领出者）
-    // v1.2 伦纳德·死亡缠绕（重做触发）：本座压住一名对手(foe) → 截取其最小牌 1 张入手（每局1次）
+    // v1.3 伦纳德·死亡缠绕（重做触发）：本座压住一名对手(foe) → 截取其最高非王牌 1 张入手（每局1次）
     if(victim>=0 && G.star[seat]==="leonard" && isFoe(seat,victim) && !G.ss[seat].leonardUsed){
       const vh=G.players[victim].hand;
       if(vh.length){ const vSorted=vh.slice().sort((a,b)=>b.v-a.v); const take=vSorted.find(c=>c.v<16) || vSorted[0]; G.players[victim].hand=vh.filter(c=>c.id!==take.id); G.players[seat].hand=G.players[seat].hand.concat([take]); G.ss[seat].leonardUsed=true; log(`🕷 ${G.players[seat].name}·死亡缠绕：截取 ${G.players[victim].name} 的 ${LABEL[take.v]} 入手`); }
@@ -1546,8 +1547,7 @@ function renderHumanControls(){
       if(avail) sb.onclick=()=>{ clearTimers(); humanUseSkill(); };
       c.appendChild(sb);
     } else {
-      const tag = STARS[st].type==='active' ? '🏀 主动技能' : (STARS[st].type==='reactive' ? '⚡ 反应技能' : '🛡 被动技能');
-      const note=document.createElement("div"); note.className="skillNote"; note.textContent=`${tag}【${STARS[st].skill}】·自动触发`;
+      const note=document.createElement("div"); note.className="skillNote"; note.textContent=`⚙️ 【${STARS[st].skill}】·按规则触发`;
       c.appendChild(note);
     }
   }
@@ -1822,31 +1822,31 @@ function renderOpponentFoulBars(on){
 function renderSkillStatus(){
   const el=document.getElementById("skillTxt"); if(!el) return;
   if(!G.star[0]){el.textContent="";return;}
-  /* v1.9.4 状态文案补全：此前 10 个技能落到默认「可用」，玩家看不出一局一次是否还能发动 */
+  /* v1.9.4 状态文案补全；v1.9.6 按 25 星全量审计结果校准次数、类型与未实装状态 */
   const st=STARS[G.star[0]], S=G.ss[0], k=st.key;
   let used="可用";
   if(k==="curry") used=S.curryUsed>=2?"已用 · 2/2":"可用 · "+(2-S.curryUsed)+"/2";
   else if(k==="kg") used=(S.kgUsed||0)>=2?"已用 · 2/2":"可用 · "+(2-(S.kgUsed||0))+"/2";
   else if(k==="durant") used=S.durantUsed?"已用 · 一局一次":(S.retakeReady?"可发动 · 弃大牌重夺出牌权":"待触发 · 被压时可重夺");
-  else if(k==="harden"||k==="oNeal"||k==="jokic"||k==="lebron"||k==="mitchell"||k==="magic"||k==="leonard") used=S[k+"Used"]?"已用 · 一局一次":"可用 · 一局一次";
+  else if(k==="harden"||k==="jokic"||k==="lebron"||k==="mitchell"||k==="magic"||k==="leonard") used=S[k+"Used"]?"已用 · 一局一次":"可用 · 一局一次";
   else if(k==="wembanyama") used=S.wembyUsed?"已用 · 一局一次":"可用 · 一局一次";
   else if(k==="doncic") used=S.doncicUsed?"已触发":"待命 · 已打出 "+(S.types?S.types.size:0)+" 种牌型";
   else if(k==="edwards") used=`免费清牌 ${S.edwardsBoost||0}/3 次`;
   else if(k==="wade") used=`常驻 · 本局已触发 ${S.wadeCount||0} 次`;
-  else if(k==="cunningham") used=`常驻 · 本局已弃 ${S.cunninghamCount||0} 张`;
+  else if(k==="cunningham") used=`免费清牌 ${S.cunninghamCount||0}/3 次`;
   else if(k==="kareem") used=S.kareemUsed?"已发动 · 单张化对":"待发动 · 单张可当对子";
   else if(k==="bird") used="常驻 · 三带可带两张不同点单张";
-  else if(k==="duncan") used="免疫（无上限）";
+  else if(k==="duncan") used="免疫换牌 / 抽牌（无上限）";
   else if(k==="giannis") used=`造犯规 ${S.gFoul||0}/4 · ${S.giannisUsed?'已发动':'待发动'}`;
   else if(k==="alexander"){
     const f1=Math.min(4,(S.foul&&S.foul[1])||0), f2=Math.min(4,(S.foul&&S.foul[2])||0);
     used=`对手① ${f1}/4 · 对手② ${f2}/4 · 已抽 ${Object.keys(S.drawn||{}).length} 次`;
   }
   else if(k==="jordan"){ const wcs=G.players[0].hand.filter(c=>(S.wildIds||[]).includes(c.id)); used=wcs.length?`万能牌：${wcs.map(c=>LABEL[c.v]||c.label).join("、")}（点击无效，开局已指定）`:"未指定"; }
-  else if(k==="kidd") used="视野常驻";
+  else if(k==="kidd"||k==="oNeal") used="暂未实装";
   else if(k==="nowitzki") used=`累计对子 ${S.pairs} · 已弃 ${S.discarded}`;
-  else if(k==="brunson") used=G.players[0].hand.length<=5?"残局加成已激活 · 全部 +1 级":"常驻 · 手牌≤5 张时 +1 级";
-  else if(k==="kobe") used="终局最大常驻";
+  else if(k==="brunson") used=G.players[0].hand.length<=5?"残局强化已激活 · 非王牌 +1 级":"常驻 · ≤5 张时非王牌 +1 级";
+  else if(k==="kobe") used="可一手出完即胜";
   el.textContent=`技能：${st.skill}（${used}）`;
 }
 function renderHands(){
@@ -2082,7 +2082,7 @@ document.getElementById("muteBtn").onclick=()=>{ SFX.muted=!SFX.muted; document.
   if(!list) return;
   const stars=(typeof STARS!=="undefined"&&STARS)||window.STARS||{};
   const imgs=(typeof STAR_IMG!=="undefined"&&STAR_IMG)||window.STAR_IMG||{};
-  const TYPE_LABEL={active:"主动",passive:"被动",reactive:"响应","passive+active":"被动+主动"};
+  const TYPE_LABEL={active:"主动",passive:"被动",reactive:"反应","passive+active":"被动+主动"};
   const TYPE_CLS={active:"active",passive:"passive",reactive:"reactive","passive+active":"mixed"};
   const keys=Object.keys(stars);
   list.innerHTML=keys.map((k,i)=>{const s=stars[k];
