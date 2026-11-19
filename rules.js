@@ -33,16 +33,16 @@
 
   const STARS = {
     jokic: { key: "jokic", name: "约基奇", skill: "移花接木", type: "active", cd: "1局1次", desc: "出牌阶段与任意一名其他玩家互换一张手牌（对手排序打乱呈现）", descFull: "在你的出牌阶段，你可以指定任意一名其他玩家与他互换一张手牌，每局限用一次。" },
-    wembanyama: { key: "wembanyama", name: "文班亚马", skill: "遮天蔽日", type: "reactive", cd: "1局1次", desc: "对手打出炸弹或王炸时可抵消其效果", descFull: "当对手打出炸弹或王炸时，你可以抵消这手牌的效果，让它视作对手不出，每局限用一次。" },
+    wembanyama: { key: "wembanyama", name: "文班亚马", skill: "遮天蔽日", type: "reactive", cd: "1局1次", desc: "对手打出炸弹时可抵消其效果；王炸不可抵消", descFull: "当对手打出炸弹时，你可以抵消这手牌的效果，让它视作对手不出，每局限用一次。王炸（大小王）以及奥尼尔升级过的炸弹都无法被抵消。" },
     alexander: { key: "alexander", name: "亚历山大", skill: "造犯规", type: "passive+active", cd: "被动常驻；主动每对手1次", desc: "被压牌→压人者+1犯规；犯规达4可抽取其1张手牌（随机决定是否保留）", descFull: "当你的牌被对手压住时，压牌的人会累计一次犯规；等他的犯规累计到 4 次，你就可以从他的手牌里盲抽一张，系统随机决定留下还是弃掉。" },
     brunson: { key: "brunson", name: "布伦森", skill: "大心脏", type: "passive", cd: "常驻", desc: "手牌≤5张时，额外获得一组非王牌点数+1的可选走法（2与王不变）", descFull: "当你的手牌剩下 5 张或更少时，你会额外获得一组可选走法：所有非王牌的点数各提升一级（3→4 … A→2），2 和大小王保持不变。" },
     durant: { key: "durant", name: "杜兰特", skill: "死神降临", type: "active", cd: "1局1次", desc: "打出含手中最大牌的牌型被压时，可弃一张大于10的牌（J/Q/K/A/2）重夺出牌权", descFull: "当你打出的牌型里包含手中最大的那张牌、并且这手牌被对手压住时，你可以弃掉一张大于 10 的牌（J、Q、K、A、2 均可）来重新夺回出牌权，每局限用一次。" },
     harden: { key: "harden", name: "哈登", skill: "and one", type: "passive", cd: "1局1次", desc: "出牌后自动再打出一次相同牌型", descFull: "你出完一手牌之后，系统会自动紧接着再打出一次完全相同的牌型，等于一次行动连出两手，每局限用一次。" },
     doncic: { key: "doncic", name: "东契奇", skill: "luka magic", type: "passive", cd: "1局1次触发", desc: "打出3种以上牌型后复制一张手中最大牌（不含王）", descFull: "当你在同一局里累计打出三种以上不同的牌型后，会自动复制一张你手中最大的牌加入手牌，王牌不参与复制。" },
     kobe: { key: "kobe", name: "科比", skill: "曼巴时刻", type: "passive", cd: "常驻", desc: "手牌恰好能一次全部打出时，直接打出即获胜", descFull: "当你的手牌恰好能组成一手全部打出的牌型时，系统会直接把它打出去并结束本局，不需要再比较点数。" },
-    duncan: { key: "duncan", name: "邓肯", skill: "石佛", type: "passive", cd: "免疫（无上限）", desc: "免疫约基奇换牌与亚历山大抽牌，无次数上限", descFull: "你免疫约基奇的移花接木换牌和亚历山大的造犯规抽牌，而且没有次数上限；当前版本不覆盖其他夺牌效果。" },
-    oNeal: { key: "oNeal", name: "奥尼尔", skill: "制霸篮下", type: "passive", cd: "暂未实装", desc: "当前原型暂未实装炸弹升级效果；选中后按普通规则进行", descFull: "当前可玩原型版本还没有开放「制霸篮下」的炸弹升级效果；选中奥尼尔后不会额外触发技能，仍按普通规则进行。" },
-    kidd: { key: "kidd", name: "基德", skill: "球场视野", type: "passive", cd: "暂未实装", desc: "当前原型暂未实装看底牌与底牌分配；选中后按普通规则进行", descFull: "当前可玩原型版本还没有开放「球场视野」的看底牌与底牌分配效果；选中基德后不会额外触发技能，仍按普通规则进行。" },
+    duncan: { key: "duncan", name: "邓肯", skill: "石佛", type: "passive", cd: "免疫（无上限）", desc: "免疫对你造成负面影响的主动技能，无次数上限", descFull: "你免疫所有对手主动施加在你身上、且会对你造成负面影响的技能：约基奇换牌、亚历山大抽牌、伦纳德截牌、米切尔冻结、魔术师塞牌，无次数上限。对手弃自己的牌、对手自身的增益、以及炸弹/王炸压制不在此列。" },
+    oNeal: { key: "oNeal", name: "奥尼尔", skill: "制霸篮下", type: "passive", cd: "1局1次", desc: "本局首次打出的炸弹升级为无人能压（真王炸除外）", descFull: "你本局第一次打出炸弹时，这手炸弹会被视为级别最高，除真正的王炸外任何牌都压不过它，同时照常翻倍；每局只触发一次，打出时牌桌会亮出技能提示。" },
+    kidd: { key: "kidd", name: "基德", skill: "球场视野", type: "passive", cd: "常驻", desc: "叫分前可看三张底牌；当地主时加倍后可自由分配这 3 张牌", descFull: "叫分前你就能看到三张底牌，用来决定叫几分。如果你成为地主，加倍结束后、出牌开始前，可以逐张指定这 3 张底牌留给自己或送给任意一名对手；如果你是农民，只享有看底牌的信息优势。AI 基德当地主时默认三张全留。" },
     nowitzki: { key: "nowitzki", name: "诺维斯基", skill: "金鸡独立", type: "passive", cd: "常驻(每累计2对触发)", desc: "本局累计打出两个对子后弃一张手牌加速清牌", descFull: "当你在同一局里累计打出两个对子之后，就可以弃掉一张手牌，用这个方式加快清空自己手牌的速度。" },
     curry: { key: "curry", name: "库里", skill: "百步穿杨", type: "active", cd: "1局2次", desc: "对子当作三张打出（重组三连）", descFull: "你可以把手中的一个对子当成三张同点数牌打出去，重组为一个三张牌型，每局可以用两次。" },
     lebron: { key: "lebron", name: "詹姆斯", skill: "加冕", type: "active", cd: "1局1次", desc: "截下一张有人过牌的单牌并领出", descFull: "当场上有一张单牌且至少一名玩家选择不出时，你可以截下这张单牌，由你重新领出，每局限用一次。" },
@@ -131,6 +131,8 @@
   }
   function beats(prev, mv) {
     if (!prev) return true;
+    // v1.9.7 奥尼尔·制霸篮下：升级炸弹除真王炸外不可被压
+    if (prev._oNeal) return mv.type === "rocket";
     if (mv.type === "rocket") return true;
     if (mv.type === "bomb") { if (prev.type === "rocket") return false; if (prev.type === "bomb") return mv.rank > prev.rank; return true; }
     if (prev.type === "bomb" || prev.type === "rocket") return false;
@@ -171,6 +173,8 @@
   }
   function genBeating(hand, prev) {
     if (prev.type === "rocket") return [];
+    // v1.9.7 奥尼尔·制霸篮下：只剩真王炸能压，AI 不会误出普通炸弹
+    if (prev._oNeal) { const gg = groupByVal(hand); return (gg[16] && gg[17]) ? [{ type: "rocket", rank: 100, len: 1, cards: [gg[16][0], gg[17][0]] }] : []; }
     const out = []; const g = groupByVal(hand); const vals = Object.keys(g).map(Number).sort((a, b) => a - b);
     if (prev.type === "single") { vals.forEach(v => { if (v > prev.rank) out.push({ type: "single", rank: v, len: 1, cards: [g[v][0]] }); }); }
     else if (prev.type === "pair") { vals.forEach(v => { if (v > prev.rank && g[v].length >= 2) out.push({ type: "pair", rank: v, len: 1, cards: g[v].slice(0, 2) }); }); }

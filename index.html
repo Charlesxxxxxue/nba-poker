@@ -3,8 +3,8 @@
 <head data-page-node-id="D6OXVWtNQzfFHEl8yeZeEv">
 <meta charset="UTF-8" data-page-node-id="GqUavfoCHzaA4SQOFX9HJY">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" data-page-node-id="HLbLnKHQUaZq0cvHfzMR8X">
-<title>NBA Poker · 可玩原型 v1.9.6 · 卡面 V1.0（S4 泼墨 · 25 星 · 无水印）</title>
-<!-- build:20261119d · 25 星技能文案全量对齐：机制重做同步 / 未实装项如实标注 -->
+<title>NBA Poker · 可玩原型 v1.9.7 · 卡面 V1.0（S4 泼墨 · 25 星 · 无水印）</title>
+<!-- build:20261119e · 邓肯免疫扩充 / 文班王炸不可抵消 / 奥尼尔与基德真实实装 -->
 <!-- 内联图标：避免浏览器默认请求 /favicon.ico 与 /apple-touch-icon.png 产生 404 控制台噪音 -->
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23070c18'/%3E%3Ccircle cx='32' cy='32' r='19' fill='%23d98b3a'/%3E%3Cg fill='none' stroke='%23070c18' stroke-width='2.6'%3E%3Cpath d='M32 13v38M13 32h38'/%3E%3Cpath d='M18.5 18.5c8 6 8 21 0 27M45.5 18.5c-8 6-8 21 0 27'/%3E%3C/g%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23070c18'/%3E%3Ccircle cx='32' cy='32' r='19' fill='%23d98b3a'/%3E%3Cg fill='none' stroke='%23070c18' stroke-width='2.6'%3E%3Cpath d='M32 13v38M13 32h38'/%3E%3Cpath d='M18.5 18.5c8 6 8 21 0 27M45.5 18.5c-8 6-8 21 0 27'/%3E%3C/g%3E%3C/svg%3E">
@@ -125,6 +125,17 @@
     background:rgba(22,103,255,.10);border:1px solid rgba(22,103,255,.28);border-radius:980px;padding:3px 9px;
     animation:wadeTagIn .9s ease both}
   @keyframes wadeTagIn{0%{opacity:0;transform:scale(.8)}30%,100%{opacity:1;transform:scale(1)}}
+  /* v1.9.7 基德·球场视野：地主分配底牌的紧凑操作区（390px 竖屏可完整容纳） */
+  .kiddAssign{display:flex;flex-direction:column;align-items:center;gap:7px;padding:6px 4px 2px;width:100%}
+  .kiddTitle{font-size:12px;font-weight:800;color:var(--txt);text-align:center;letter-spacing:.2px}
+  .kiddRow{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+  .kiddCell{display:flex;flex-direction:column;align-items:center;gap:4px}
+  .kiddMini{width:38px;height:50px;border-radius:6px;border:1px solid #cbd9ec;background:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#061b31;
+    box-shadow:0 2px 6px rgba(16,42,80,.10)}
+  .kiddMini.red{color:#d1332e}
+  .kiddSel{font-size:11px;padding:3px 4px;border:1px solid #cbd9ec;border-radius:6px;
+    background:#fff;color:#061b31;max-width:96px}
   /* v1.9 中间区死区填充：三家「上一手」对比面板（v1.9.3 起取消：信息噪音 > 决策价值） */
   #duel{display:none!important}
   .duel{display:flex;gap:8px;justify-content:center;align-items:stretch;width:100%;max-width:940px;margin:2px 0 0}
@@ -504,7 +515,7 @@
 </div>
 
   <div class="topbar" data-page-node-id="ICFu3aC2YrRYewiiDXPHcz">
-    <div data-page-node-id="xCuiWjasILiAngVsuSvITd"><b data-page-node-id="bjjV5UeT1fEn2t9a7BWEd8">NBA POKER</b> · 可玩原型 <b data-page-node-id="HcTMevaBKC0aZX9hmWQdFe">v1.9.6</b> · 卡面 <b data-page-node-id="DNXWe0lfB2iZi7Ud28ul1I">V1.0</b> <span class="pill" data-page-node-id="JmEb1LyuwGaKbcPI31kENW">｜25 星卡池 ｜ 标准叫分制 ｜ 农民 2打1 协作</span></div>
+    <div data-page-node-id="xCuiWjasILiAngVsuSvITd"><b data-page-node-id="bjjV5UeT1fEn2t9a7BWEd8">NBA POKER</b> · 可玩原型 <b data-page-node-id="HcTMevaBKC0aZX9hmWQdFe">v1.9.7</b> · 卡面 <b data-page-node-id="DNXWe0lfB2iZi7Ud28ul1I">V1.0</b> <span class="pill" data-page-node-id="JmEb1LyuwGaKbcPI31kENW">｜25 星卡池 ｜ 标准叫分制 ｜ 农民 2打1 协作</span></div>
     <button class="mini" id="minBtn" data-page-node-id="EySCTcVn0L1pkF0xgMMba8">▽<span class="btnTxt"> 最小化</span></button>
     <button class="mini" id="skillIntroBtn" data-page-node-id="ATxvLrXTIYvO6LVVtERSS4">📖<span class="btnTxt"> 技能简介</span></button>
     <button class="mini" id="muteBtn" data-page-node-id="WgivqBfEfWRumHUxwRZoFU">🔊</button>
@@ -853,11 +864,16 @@ function aiStrong(seat,prev){
     return null;
   }
 }
-function aiBid(hand){
+function aiBid(hand, seat){
   const g=groupByVal(hand);let s=0;
   if(g[17])s+=2; if(g[16])s+=1; if(g[15])s+=g[15].length*0.8;
   Object.values(g).forEach(arr=>{if(arr.length===4)s+=2;});
   s+=hand.length*0.05;
+  // v1.9.7 基德·球场视野：AI 座位叫分前同样看底牌，底牌够强时更敢叫
+  if(seat!==undefined && !SKILLS_OFF && G.star[seat]==='kidd' && G.bottom && G.bottom.length){
+    const bv=G.bottom.reduce((a,c)=>a+(c.v>=16?2:(c.v>=14?1:0)),0);
+    if(bv>=3) s+=1.2;
+  }
   if(s>=6)return 3; if(s>=3.5)return 2; if(s>=2)return 1; return 0;
 }
 function aiDouble(seat){ return Math.random()<0.45; }
@@ -915,6 +931,7 @@ function newGame(){
   G.bombPlayed=false; G.bombCount=0; G.elapsed=0; G.humanTurns=0; G.aiTurns=0;
   G.players.forEach(p=>p.hand=[]); G.bottom=[]; G.landlord=-1; G.lastMove=null; G.lastSeat=-1; G.seatLast=[null,null,null];
   G.mult=1; G.doubleDone=false; G.passes=0;
+  G.kiddPending=false; G.kiddAssigned=false;   // v1.9.7 基德·球场视野：本局分配状态复位
   document.getElementById("log").innerHTML="";
   document.getElementById("seat0").querySelector(".nm").innerHTML='你（？） <span class="tag" id="tag0" style="display:none">地主</span>';
   setHero(null);
@@ -930,12 +947,12 @@ function newGame(){
 }
 
 let pickSelKey=null;
-/* v1.9.6 选将标签：次数型技能直接读 cd；未实装技能直接显示状态，避免误导 */
+/* v1.9.7 选将标签：次数型/免疫型技能直接读 cd；未实装技能直接显示状态，避免误导 */
 function starTypeLabel(st, sep){
   const base=st.type==='active'?'主动':(st.type==='reactive'?'反应':(st.type==='passive+active'?'被动+主动':'被动'));
   const cd=st.cd||'';
   if(/未实装/.test(cd)) return cd;
-  const short=/^(1局\d次(触发)?|每局指定\d张)$/.test(cd) ? cd.replace('触发','') : '';
+  const short=/^(1局\d次(触发)?|每局指定\d张|免疫（无上限）|常驻)$/.test(cd) ? cd.replace('触发','') : '';
   return short ? base+sep+short : base+sep+(base.indexOf('被动')===0?'常驻':'一局一次');
 }
 function selectStarCard(k,btn){
@@ -1067,9 +1084,11 @@ function startDeal(){
   [1,2].forEach(s=>{ if(G.star[s]==='jordan'){ const h=G.players[s].hand; G.ss[s].wildIds = h.length? pickTwoLowest(h).map(c=>c.id) : []; } });
   G.humanStartStrength=handStrength(best.p0); G.humanStartBombs=countBombs(best.p0);
   if(best.hasBomb) log("💣 本局含保底炸弹（娱乐化回调）");
-  log("发牌完成：每人 17 张，底牌 3 张（暗牌，确定地主后翻开）。");
+  log(G.star[0]==='kidd' && !SKILLS_OFF ? "发牌完成：每人 17 张，底牌 3 张（👁 球场视野：你已提前看到底牌）。" : "发牌完成：每人 17 张，底牌 3 张（暗牌，确定地主后翻开）。");
   G.phase="bid"; G.bidRound=[]; G.bidMax=0; G.bidWinner=-1;
   G.bottomRevealed=false;                      // v0.7：底牌先暗，叫完地主再明
+  G.kiddPending=false; G.kiddAssigned=false;   // v1.9.7 基德·球场视野：本局分配状态复位
+  if(G.star[0]==='kidd' && !SKILLS_OFF) G.ss[0].kiddSeen=true;
   G.bidStart=Math.floor(Math.random()*3); G.turn=G.bidStart;
   setPhaseTxt("叫地主（叫分制：1/2/3 分，叫 3 分立即当地主；都不叫则重发）");
   renderAll();
@@ -1097,7 +1116,7 @@ function stepBid(){
   } else {
     setBubble(seat, "思考中…");
     renderWaitingControls(seat);                  // v1.9.1：叫分阶段同样清空，避免玩家重复点击叫分
-    G.aiTimer=setTimeout(()=>{ const b=aiBid(G.players[seat].hand); doBid(seat, b>G.bidMax?b:0); },700);
+    G.aiTimer=setTimeout(()=>{ const b=aiBid(G.players[seat].hand, seat); doBid(seat, b>G.bidMax?b:0); },700);
   }
 }
 function doBid(seat,b){
@@ -1126,24 +1145,35 @@ function finishBid(){
   G.mult=G.bidMax;
   // 成熟斗地主流程：底牌翻明 → 立即并入地主手牌并排序 → 再进入加倍阶段
   G.bottomRevealed=true;
-  if(G.star[G.landlord]==='kidd'){ log(`👁 ${G.players[G.landlord].name}·球场视野：看底牌并自行分配（全留地主）`); }
-  G.players[G.landlord].hand=G.players[G.landlord].hand.concat(G.bottom);
-  sortHand(G.players[G.landlord].hand);
+  // v1.9.7 基德·球场视野（被动②）：真人地主加倍后逐张分配；AI / 无头仿真默认全留
+  const kiddLord = !SKILLS_OFF && G.star[G.landlord]==='kidd';
+  const kiddInteractive = kiddLord && G.landlord===0 && !SIM_MODE;
+  if(kiddInteractive){
+    G.kiddPending=true;
+    log(`👁 ${G.players[0].name}·球场视野：加倍结束后可逐张分配 3 张底牌`);
+  } else {
+    if(kiddLord) log(`👁 ${G.players[G.landlord].name}·球场视野：看底牌并自行分配（全留地主）`);
+    G.players[G.landlord].hand=G.players[G.landlord].hand.concat(G.bottom);
+    sortHand(G.players[G.landlord].hand);
+  }
   [0,1,2].forEach(s=>{document.getElementById("tag"+s).style.display=(s===G.landlord?"inline-block":"none");
     document.getElementById("role"+s).textContent=(s===G.landlord?"地主":"农民");});
   showBottomCards();
-  log(`地主是 ${G.players[G.landlord].name}（叫 ${G.bidMax} 分），3 张底牌已翻开并加入地主手牌。`);
-  setPhaseTxt("加倍阶段（底牌已并入地主手牌）");
+  log(`地主是 ${G.players[G.landlord].name}（叫 ${G.bidMax} 分），3 张底牌已翻开`+(G.kiddPending?"，等待基德分配。":"并加入地主手牌。"));
+  setPhaseTxt(G.kiddPending?"加倍阶段（底牌待基德分配）":"加倍阶段（底牌已并入地主手牌）");
   G.phase="double"; G.turn=G.landlord; G.doubleDone=false;
   renderAll();                                  // 关键：先看到地主 20 张手牌，再决定加不加倍
   stepDouble();
 }
 function showBottomCards(){
   const el=document.getElementById("bottomCards"); el.innerHTML="";
-  const lbl=document.createElement("span"); lbl.className="lbl"; lbl.textContent=G.bottomRevealed?"底牌":"底牌(暗)"; el.appendChild(lbl);
+  // v1.9.7 基德·球场视野：叫分前只有基德本人能看到三张底牌
+  const kiddView = !SKILLS_OFF && G.star[0]==='kidd' && !G.bottomRevealed;
+  const shown = G.bottomRevealed || kiddView;
+  const lbl=document.createElement("span"); lbl.className="lbl"; lbl.textContent=shown?(kiddView?"底牌 · 👁 球场视野":"底牌"):"底牌(暗)"; el.appendChild(lbl);
   G.bottom.forEach(c=>{
     const k=document.createElement("div");
-    if(!G.bottomRevealed){ k.className="card back"; }
+    if(!shown){ k.className="card back"; }
     else { k.className="card"+(c.red?" red":""); k.innerHTML=cardHTML(c); }
     el.appendChild(k);
   });
@@ -1175,21 +1205,71 @@ function renderControls_double(){
 
 /* ---- S4 出牌 ---- */
 function startPlay(){
+  if(G.kiddPending && !SIM_MODE){ enterKiddAssign(); return; }
+  startPlayCore();
+}
+function startPlayCore(){
   G.phase="play"; G.turn=G.landlord; G.lastMove=null; G.lastSeat=-1; G.passes=0; G.seatLast=[null,null,null];
   setPhaseTxt("出牌阶段 · 地主先手");
   startClock();          // 真实墙钟开始计时（DEC-011：elapsed 计数 + 软上限）
   renderAll();
   nextTurn();
 }
+/* v1.9.7 基德·球场视野（被动②）：真人地主在加倍后、出牌前逐张分配 3 张底牌 */
+function enterKiddAssign(){
+  clearTimers();
+  const tt=document.getElementById("timerTxt"); if(tt) tt.textContent="";   // 清掉加倍阶段残留的假倒计时
+  G.phase="kiddAssign";
+  renderAll();
+  setPhaseTxt("👁 球场视野 · 分配 3 张底牌（地主专属）");
+  const c=document.getElementById("controls"); c.innerHTML="";
+  const box=document.createElement("div"); box.className="kiddAssign";
+  const title=document.createElement("div"); title.className="kiddTitle";
+  title.textContent="把每张底牌分给谁？（默认全给自己）"; box.appendChild(title);
+  const row=document.createElement("div"); row.className="kiddRow";
+  const sels=[];
+  G.bottom.forEach(card=>{
+    const cell=document.createElement("div"); cell.className="kiddCell";
+    const mini=document.createElement("div"); mini.className="kiddMini"+(card.red?" red":"");
+    mini.textContent=(LABEL[card.v]||card.label||"")+(card.s||"");
+    const sel=document.createElement("select"); sel.className="kiddSel";
+    [0,1,2].forEach(s=>{
+      const o=document.createElement("option"); o.value=String(s);
+      o.textContent=(s===0?"留给自己":G.players[s].name); sel.appendChild(o);
+    });
+    sel.value="0"; sels.push(sel);
+    cell.appendChild(mini); cell.appendChild(sel); row.appendChild(cell);
+  });
+  box.appendChild(row);
+  const btn=document.createElement("button"); btn.className="btn primary";
+  btn.textContent="确定分配 · 开始出牌";
+  btn.onclick=()=>confirmKiddAssign(sels.map(s=>parseInt(s.value,10)));
+  box.appendChild(btn); c.appendChild(box);
+}
+function confirmKiddAssign(dest){
+  if(!G.kiddPending) return;
+  const cnt=[0,0,0];
+  G.bottom.forEach((card,i)=>{
+    const s=(dest[i]===1||dest[i]===2)?dest[i]:0;
+    G.players[s].hand.push(card); cnt[s]++;
+  });
+  [0,1,2].forEach(s=>sortHand(G.players[s].hand));
+  const parts=[0,1,2].filter(s=>cnt[s]>0).map(s=>(s===0?"自己":G.players[s].name)+" "+cnt[s]+" 张");
+  log(`👁 ${G.players[0].name}·球场视野：底牌分配完成（${parts.join(" / ")}）`,true);
+  G.kiddPending=false; G.kiddAssigned=true;
+  clearTimers(); renderAll(); showBottomCards();
+  startPlayCore();
+}
 /* ============================================================================
- *  NBA Poker · 25 球星技能系统（v1.6 机制基线 · v1.9.6 文案对齐）
+ *  NBA Poker · 25 球星技能系统（v1.6 机制基线 · v1.9.7 机制收口）
  *  机制/边界见 02_mecha_gameplay/PLAYER_SKILLS_v0.2.md（四-G 命名总表）
  *  SKILLS_OFF=true 时全部技能失效（门禁 naive 对照）
  *  人类与 AI 座均从 STARS 池抽星，机制完全通用（autoPlaySeat 统一驱动）
  * ==========================================================================*/
 var SKILLS_OFF=false;
+var SIM_MODE=false;   // v1.9.7：无头仿真/回归模式，基德分配自动全留，避免等待真人点击
 /* pickTwoLowest → rules.js（经 window 全局提供） */
-function freshSS(){ return { used:{}, foul:{}, drawn:{}, types:new Set(), pairs:0, discarded:0,
+function freshSS(){ return { used:{}, foul:{}, drawn:{}, types:new Set(), pairs:0, discarded:0, duncanBlocks:0,
   jokicUsed:false, curryUsed:0, hardenUsed:false, lebronUsed:false, wembyUsed:false,
   oNealUsed:false, durantUsed:false, retakeReady:false, _lastHadMax:false,
   doncicUsed:false, wildIds:[], kiddSeen:false,
@@ -1257,12 +1337,21 @@ function curryReorgMove(seat){
   if(pr===undefined) return null;
   return buildReorgMove([g[pr][0].id, g[pr][1].id]);
 }
+/* v1.9.7 邓肯·石佛：免疫对手主动施加、且对邓肯造成负面影响的技能（无次数上限）。
+ * 覆盖：约基奇换牌 / 亚历山大抽牌 / 伦纳德截牌 / 米切尔冻结 / 魔术师塞牌。
+ * 不覆盖：对手弃自己的牌、对手自身增益、炸弹与王炸压制。 */
+function duncanBlocks(target, from, label){
+  if(SKILLS_OFF || !G.star[target] || G.star[target]!=='duncan') return false;
+  G.ss[target].duncanBlocks=(G.ss[target].duncanBlocks||0)+1;
+  log(`🛡 ${G.players[target].name}·石佛：免疫 ${G.players[from].name} 的${label}`);
+  return true;
+}
 function jokicSwap(seat){
   const S=G.ss[seat]; if(S.jokicUsed) return; const hand=G.players[seat].hand;
   const others=oppAll(seat).filter(s=>G.players[s].hand.length>0);
   if(!others.length||hand.length===0) return;
   const os=others[Math.floor(Math.random()*others.length)];
-  if(G.star[os]==='duncan'){ log(`🛡 ${G.players[os].name}·石佛免疫了约基奇的换牌`); S.jokicUsed=true; return; }
+  if(duncanBlocks(os, seat, '移花接木换牌')){ S.jokicUsed=true; return; }
   const oc=G.players[os].hand[Math.floor(Math.random()*G.players[os].hand.length)];
   const wc=worstCardOf(hand);
   G.players[seat].hand=hand.filter(c=>c.id!==wc.id).concat([oc]);
@@ -1271,7 +1360,7 @@ function jokicSwap(seat){
 }
 function alexanderDraw(seat, target){
   const S=G.ss[seat]; if(S.drawn[target]) return; const tgt=G.players[target].hand; if(!tgt.length){ S.drawn[target]=true; return; }
-  if(G.star[target]==='duncan'){ log(`🛡 ${G.players[target].name}·石佛免疫了亚历山大的抽取`); S.drawn[target]=true; return; }
+  if(duncanBlocks(target, seat, '造犯规抽牌')){ S.drawn[target]=true; return; }
   const idx=Math.floor(Math.random()*tgt.length); const card=tgt[idx]; S.drawn[target]=true;
   const keep=(card.v>=11||card.v>=16||Math.random()<0.5);
   if(keep){ G.players[seat].hand=G.players[seat].hand.concat([card]); G.players[target].hand=tgt.filter(c=>c.id!==card.id); log(`🃏 ${G.players[seat].name}·造犯规：抽取 ${G.players[target].name} 一张牌（保留）`); }
@@ -1302,8 +1391,8 @@ function autoPlaySeat(seat, prev){
     if(st==='jokic' && !S.jokicUsed && hand.length>1){ jokicSwap(seat); }
     if(st==='alexander'){ const t=Object.keys(S.foul).find(k=>(S.foul[k]||0)>=4 && !S.drawn[k]); if(t!==undefined) alexanderDraw(seat, +t); }
     // v1.1 扩库·主动效果（领出）：米切尔冻结 / 魔术师传牌
-    if(st==='mitchell' && !S.mitchellUsed){ const foes=oppAll(seat).filter(s=>G.players[s].hand.length>0 && G.players[s].hand.length<=10); if(foes.length){ const f=foes[0]; G.ss[f].frozen=true; S.mitchellUsed=true; log(`🧊 ${G.players[seat].name}·关键先生：冻结 ${G.players[f].name} 下一回合`); } }
-    if(st==='magic' && !S.magicUsed && hand.length<=10){ const foes=oppAll(seat).filter(s=>G.players[s].hand.length>0); if(foes.length){ const f=foes.sort((a,b)=>G.players[a].hand.length-G.players[b].hand.length)[0]; const give=worstCardOf(hand); if(give){ G.players[seat].hand=hand.filter(c=>c.id!==give.id); G.players[f].hand=G.players[f].hand.concat([give]); S.magicUsed=true; log(`🎩 ${G.players[seat].name}·showtime：把 ${LABEL[give.v]} 传给 ${G.players[f].name}`); } } }
+    if(st==='mitchell' && !S.mitchellUsed){ const foes=oppAll(seat).filter(s=>G.players[s].hand.length>0 && G.players[s].hand.length<=10); if(foes.length){ const f=foes[0]; S.mitchellUsed=true; if(!duncanBlocks(f, seat, '关键先生冻结')){ G.ss[f].frozen=true; log(`🧊 ${G.players[seat].name}·关键先生：冻结 ${G.players[f].name} 下一回合`); } } }
+    if(st==='magic' && !S.magicUsed && hand.length<=10){ const foes=oppAll(seat).filter(s=>G.players[s].hand.length>0); if(foes.length){ const f=foes.sort((a,b)=>G.players[a].hand.length-G.players[b].hand.length)[0]; const give=worstCardOf(hand); if(give){ S.magicUsed=true; if(!duncanBlocks(f, seat, 'showtime 塞牌')){ G.players[seat].hand=hand.filter(c=>c.id!==give.id); G.players[f].hand=G.players[f].hand.concat([give]); log(`🎩 ${G.players[seat].name}·showtime：把 ${LABEL[give.v]} 传给 ${G.players[f].name}`); } } } }
     const all=genAllForSeat(seat);
     const mv=(seat===0)? strongPick(seat, all, null) : aiChoose(seat, null);
     // v1.2 爱德华兹旧版「合成对」已废弃：当前机制不生成额外牌型，收益在 commitMove 出牌后清牌
@@ -1315,8 +1404,8 @@ function autoPlaySeat(seat, prev){
   } else { // ---------- 跟牌 ----------
     if(st==='lebron' && !S.lebronUsed && prev.type==='single' && G.passes>=1){ G.players[seat].hand=G.players[seat].hand.concat([prev.cards[0]]); G.lastMove=null; G.passes=0; S.lebronUsed=true; log(`👑 ${G.players[seat].name}·加冕：截下 ${LABEL[prev.cards[0].v]} 并领出`); const a2=genAllForSeat(seat); const m2=(seat===0)?strongPick(seat,a2,null):aiChoose(seat,null); if(m2) commitMove(seat,m2); else applyMove(seat,null); return; }
     // v1.1 扩库·主动效果（跟牌）：米切尔冻结 / 魔术师传牌
-    if(st==='mitchell' && !S.mitchellUsed){ const foes=oppAll(seat).filter(s=>G.players[s].hand.length>0 && G.players[s].hand.length<=10); if(foes.length){ const f=foes[0]; G.ss[f].frozen=true; S.mitchellUsed=true; log(`🧊 ${G.players[seat].name}·关键先生：冻结 ${G.players[f].name} 下一回合`); } }
-    if(st==='magic' && !S.magicUsed && hand.length<=10){ const foes=oppAll(seat).filter(s=>G.players[s].hand.length>0); if(foes.length){ const f=foes.sort((a,b)=>G.players[a].hand.length-G.players[b].hand.length)[0]; const give=worstCardOf(hand); if(give){ G.players[seat].hand=hand.filter(c=>c.id!==give.id); G.players[f].hand=G.players[f].hand.concat([give]); S.magicUsed=true; log(`🎩 ${G.players[seat].name}·showtime：把 ${LABEL[give.v]} 传给 ${G.players[f].name}`); } } }
+    if(st==='mitchell' && !S.mitchellUsed){ const foes=oppAll(seat).filter(s=>G.players[s].hand.length>0 && G.players[s].hand.length<=10); if(foes.length){ const f=foes[0]; S.mitchellUsed=true; if(!duncanBlocks(f, seat, '关键先生冻结')){ G.ss[f].frozen=true; log(`🧊 ${G.players[seat].name}·关键先生：冻结 ${G.players[f].name} 下一回合`); } } }
+    if(st==='magic' && !S.magicUsed && hand.length<=10){ const foes=oppAll(seat).filter(s=>G.players[s].hand.length>0); if(foes.length){ const f=foes.sort((a,b)=>G.players[a].hand.length-G.players[b].hand.length)[0]; const give=worstCardOf(hand); if(give){ S.magicUsed=true; if(!duncanBlocks(f, seat, 'showtime 塞牌')){ G.players[seat].hand=hand.filter(c=>c.id!==give.id); G.players[f].hand=G.players[f].hand.concat([give]); log(`🎩 ${G.players[seat].name}·showtime：把 ${LABEL[give.v]} 传给 ${G.players[f].name}`); } } } }
     // v1.3 爱德华兹·三分暴雨：跟牌不再生成合成对；每局 3 次免费清牌统一在 commitMove 结算
     const mv=(seat===0)? strongPick(seat, genBeatingForSeat(seat,prev), prev) : aiChoose(seat, prev);
     if(mv){ commitMove(seat,mv); return; }
@@ -1364,18 +1453,26 @@ function commitMove(seat,mv){
   G.moveCount++;
   if(seat===0) G.humanTurns++; else G.aiTurns++;
   if(mv){
-    // 文班·遮天蔽日：当前代码对手炸弹/王炸均抵消（视作对手不出）；v1.9.6 文案按代码对齐
-    if((mv.type==="bomb"||mv.type==="rocket") && G.lastSeat>=0){
+    // v1.9.7 奥尼尔·制霸篮下：本局首次炸弹升级为「除真王炸外无人能压」
+    if(!SKILLS_OFF && G.star[seat]==='oNeal' && !G.ss[seat].oNealUsed && mv.type==='bomb'){
+      mv={...mv,_oNeal:true}; G.ss[seat].oNealUsed=true;
+      log(`🏀 ${G.players[seat].name}·制霸篮下：炸弹升级，除王炸外无人能压`,seat===0);
+    }
+    // 文班·遮天蔽日（PLAYER_SKILLS_v0.2 定稿）：只抵消普通炸弹；王炸与奥尼尔升级炸弹均不可抵消
+    if(mv.type==="bomb" && !mv._oNeal && G.lastSeat>=0){
       const W=oppAll(seat).find(s=>G.star[s]==="wembanyama" && !G.ss[s].wembyUsed && isFoe(s,seat));
-      if(W!==undefined){ G.ss[W].wembyUsed=true; log(`🚫 ${G.players[W].name}·遮天蔽日：抵消 ${G.players[seat].name} 的${mv.type==="rocket"?"王炸":"炸弹"}`); commitMove(seat,null); return; }
+      if(W!==undefined){ G.ss[W].wembyUsed=true; log(`🚫 ${G.players[W].name}·遮天蔽日：抵消 ${G.players[seat].name} 的炸弹`); commitMove(seat,null); return; }
     }
     // v1.3 伦纳德·死亡缠绕：原「对手炸弹截取」触发率≈0，已重做为下方「压住对手截最高非王牌」（见 victim 计算后）
 
     const victim=G.lastSeat;                                   // 被本手压制的上家（领出者）
     // v1.3 伦纳德·死亡缠绕（重做触发）：本座压住一名对手(foe) → 截取其最高非王牌 1 张入手（每局1次）
     if(victim>=0 && G.star[seat]==="leonard" && isFoe(seat,victim) && !G.ss[seat].leonardUsed){
-      const vh=G.players[victim].hand;
-      if(vh.length){ const vSorted=vh.slice().sort((a,b)=>b.v-a.v); const take=vSorted.find(c=>c.v<16) || vSorted[0]; G.players[victim].hand=vh.filter(c=>c.id!==take.id); G.players[seat].hand=G.players[seat].hand.concat([take]); G.ss[seat].leonardUsed=true; log(`🕷 ${G.players[seat].name}·死亡缠绕：截取 ${G.players[victim].name} 的 ${LABEL[take.v]} 入手`); }
+      G.ss[seat].leonardUsed=true;
+      if(!duncanBlocks(victim, seat, '死亡缠绕截牌')){
+        const vh=G.players[victim].hand;
+        if(vh.length){ const vSorted=vh.slice().sort((a,b)=>b.v-a.v); const take=vSorted.find(c=>c.v<16) || vSorted[0]; G.players[victim].hand=vh.filter(c=>c.id!==take.id); G.players[seat].hand=G.players[seat].hand.concat([take]); log(`🕷 ${G.players[seat].name}·死亡缠绕：截取 ${G.players[victim].name} 的 ${LABEL[take.v]} 入手`); }
+      }
     }
     const ids=new Set(mv.cards.map(c=>c.id));
     // 杜兰特·死神降临：记录本手是否含打出前最大牌（用于被压时标记重夺）
@@ -1457,7 +1554,7 @@ function commitMove(seat,mv){
 function moveName(mv){
   const names={single:"单张",pair:"对子",triple:"三张",triple1:"三带一",triple2:"三带二",straight:"顺子",double:"连对",airplane:"飞机",airplane1:"飞机带单",airplane2:"飞机带对",bomb:"炸弹",rocket:"火箭"};
   const top=LABEL[mv.rank]||"";
-  const tag=mv._phantom?"★":"";
+  const tag=mv._oNeal?"·制霸":(mv._phantom?"★":"");
   return `${names[mv.type]||mv.type}(${top})${tag}`;
 }
 
@@ -1822,28 +1919,29 @@ function renderOpponentFoulBars(on){
 function renderSkillStatus(){
   const el=document.getElementById("skillTxt"); if(!el) return;
   if(!G.star[0]){el.textContent="";return;}
-  /* v1.9.4 状态文案补全；v1.9.6 按 25 星全量审计结果校准次数、类型与未实装状态 */
+  /* v1.9.4 状态文案补全；v1.9.6 全量校准；v1.9.7 改为真实机制状态 */
   const st=STARS[G.star[0]], S=G.ss[0], k=st.key;
   let used="可用";
   if(k==="curry") used=S.curryUsed>=2?"已用 · 2/2":"可用 · "+(2-S.curryUsed)+"/2";
   else if(k==="kg") used=(S.kgUsed||0)>=2?"已用 · 2/2":"可用 · "+(2-(S.kgUsed||0))+"/2";
   else if(k==="durant") used=S.durantUsed?"已用 · 一局一次":(S.retakeReady?"可发动 · 弃大牌重夺出牌权":"待触发 · 被压时可重夺");
   else if(k==="harden"||k==="jokic"||k==="lebron"||k==="mitchell"||k==="magic"||k==="leonard") used=S[k+"Used"]?"已用 · 一局一次":"可用 · 一局一次";
-  else if(k==="wembanyama") used=S.wembyUsed?"已用 · 一局一次":"可用 · 一局一次";
+  else if(k==="wembanyama") used=S.wembyUsed?"已用 · 一局一次":"可抵消炸弹 · 王炸除外";
   else if(k==="doncic") used=S.doncicUsed?"已触发":"待命 · 已打出 "+(S.types?S.types.size:0)+" 种牌型";
   else if(k==="edwards") used=`免费清牌 ${S.edwardsBoost||0}/3 次`;
   else if(k==="wade") used=`常驻 · 本局已触发 ${S.wadeCount||0} 次`;
   else if(k==="cunningham") used=`免费清牌 ${S.cunninghamCount||0}/3 次`;
   else if(k==="kareem") used=S.kareemUsed?"已发动 · 单张化对":"待发动 · 单张可当对子";
   else if(k==="bird") used="常驻 · 三带可带两张不同点单张";
-  else if(k==="duncan") used="免疫换牌 / 抽牌（无上限）";
+  else if(k==="duncan") used=`已挡 ${S.duncanBlocks||0} 次 · 免疫针对性负面技能`;
   else if(k==="giannis") used=`造犯规 ${S.gFoul||0}/4 · ${S.giannisUsed?'已发动':'待发动'}`;
   else if(k==="alexander"){
     const f1=Math.min(4,(S.foul&&S.foul[1])||0), f2=Math.min(4,(S.foul&&S.foul[2])||0);
     used=`对手① ${f1}/4 · 对手② ${f2}/4 · 已抽 ${Object.keys(S.drawn||{}).length} 次`;
   }
   else if(k==="jordan"){ const wcs=G.players[0].hand.filter(c=>(S.wildIds||[]).includes(c.id)); used=wcs.length?`万能牌：${wcs.map(c=>LABEL[c.v]||c.label).join("、")}（点击无效，开局已指定）`:"未指定"; }
-  else if(k==="kidd"||k==="oNeal") used="暂未实装";
+  else if(k==="kidd") used=G.kiddPending?"待分配底牌":(G.kiddAssigned?"底牌已分配":"已看底牌 · 常驻");
+  else if(k==="oNeal") used=S.oNealUsed?"已用 · 一局一次":"待发动 · 首张炸弹升级";
   else if(k==="nowitzki") used=`累计对子 ${S.pairs} · 已弃 ${S.discarded}`;
   else if(k==="brunson") used=G.players[0].hand.length<=5?"残局强化已激活 · 非王牌 +1 级":"常驻 · ≤5 张时非王牌 +1 级";
   else if(k==="kobe") used="可一手出完即胜";
@@ -1988,6 +2086,11 @@ function renderLast(){
     if(wade){
       const tag=document.createElement("div");
       tag.className="wadeTag"; tag.textContent="⚡ 闪电突破 · 点数 +1";
+      el.appendChild(tag);
+    }
+    if(G.lastMove._oNeal){
+      const tag=document.createElement("div");
+      tag.className="wadeTag"; tag.textContent="🏀 制霸篮下 · 除王炸外无人能压";
       el.appendChild(tag);
     }
     // v1.5 贾巴尔·天勾无解：单张化对 —— 补一张同点数幻影牌，黄色光圈 + "补"角标注明非真实手牌
