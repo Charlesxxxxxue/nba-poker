@@ -49,7 +49,7 @@
     jordan: { key: "jordan", name: "乔丹", skill: "神之一手", type: "active", cd: "每局指定" + JORDAN_WILDS + "张", desc: "开局主动指定" + JORDAN_WILDS + "张手牌为万能牌（可变2–A任意牌，不可当王）", descFull: "开局时你可以主动指定 " + JORDAN_WILDS + " 张手牌当作万能牌，万能牌能变成 2 到 A 之间的任意点数，但不能当作王牌使用。" },
     // ===== 扩库 v1.1 · 已确认 10 人（现役5 + 退役5）=====
     giannis: { key: "giannis", name: "字母哥", skill: "字母轰炸", type: "passive", cd: "常驻", desc: "被动：出牌被对手压→造犯规+1；累计满4点弃掉一张牌并清零", descFull: "当你打出的牌被对手压住时，你会累计一次犯规；等犯规累计满 4 次，你就弃掉一张手牌，然后犯规数清零重新计算。" },
-    edwards: { key: "edwards", name: "爱德华兹", skill: "三分暴雨", type: "active", cd: "1局1次", desc: "合成一对打出，对子点数取两张中较小者", descFull: "你可以把手中任意两张牌临时合成一个对子打出去，这个对子的点数以两张里较小的那张为准，每局限用一次。" },
+    edwards: { key: "edwards", name: "爱德华兹", skill: "三分暴雨", type: "passive", cd: "1局3次", desc: "每次出牌后自动清掉最小牌，每局最多 3 次", descFull: "你每次打出一手牌之后，系统会自动帮你额外清掉手里点数最小的一张牌；这不会额外消耗出牌机会，每局最多触发 3 次。" },
     mitchell: { key: "mitchell", name: "米切尔", skill: "关键先生", type: "active", cd: "1局1次", desc: "对手≤10张时冻结其下一次出牌", descFull: "当某位对手的手牌剩下 10 张或更少时，你可以冻结他的下一次出牌机会，让他这一轮只能过牌，每局限用一次。" },
     cunningham: { key: "cunningham", name: "坎宁安", skill: "组织发动机", type: "passive", cd: "常驻", desc: "场上连续打出4个相同牌型时，可弃掉点数最小的一张牌（弹窗询问，8s倒计时）", descFull: "当场上连续出现四个相同的牌型时，你可以弃掉手中点数最小的那张牌，系统会弹窗询问你，并在 8 秒倒计时结束后自动确认。" },
     leonard: { key: "leonard", name: "伦纳德", skill: "死亡缠绕", type: "passive", cd: "常驻", desc: "对手打出非王炸炸弹时，可选1-3张加入手牌", descFull: "当对手打出不是王炸的炸弹时，你可以从这手炸弹里挑 1 到 3 张牌收进自己的手牌。" },
