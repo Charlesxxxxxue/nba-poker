@@ -3,8 +3,8 @@
 <head data-page-node-id="D6OXVWtNQzfFHEl8yeZeEv">
 <meta charset="UTF-8" data-page-node-id="GqUavfoCHzaA4SQOFX9HJY">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" data-page-node-id="HLbLnKHQUaZq0cvHfzMR8X">
-<title>NBA Poker · 可玩原型 v1.9.9c · 卡面 V1.0（S4 泼墨 · 25 星 · 无水印）</title>
-<!-- build:20261120c · 真人路径技能接线（韦德/布伦森/贾巴尔走法匹配 + 哈登连击/米切尔/魔术师钩子共用）；25 星双路径体检 0 违规 -->
+<title>NBA Poker · 可玩原型 v1.9.9d · 卡面 V1.0（S4 泼墨 · 25 星 · 无水印）</title>
+<!-- build:20261120d · 三星专项修复：杜兰特重夺即时抢权 + 弃出牌后最大非王牌；约基奇目标打乱可指定；亚历山大抽牌可选留弃；改牌后手牌统一降序 -->
 <!-- 内联图标：避免浏览器默认请求 /favicon.ico 与 /apple-touch-icon.png 产生 404 控制台噪音 -->
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23070c18'/%3E%3Ccircle cx='32' cy='32' r='19' fill='%23d98b3a'/%3E%3Cg fill='none' stroke='%23070c18' stroke-width='2.6'%3E%3Cpath d='M32 13v38M13 32h38'/%3E%3Cpath d='M18.5 18.5c8 6 8 21 0 27M45.5 18.5c-8 6-8 21 0 27'/%3E%3C/g%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23070c18'/%3E%3Ccircle cx='32' cy='32' r='19' fill='%23d98b3a'/%3E%3Cg fill='none' stroke='%23070c18' stroke-width='2.6'%3E%3Cpath d='M32 13v38M13 32h38'/%3E%3Cpath d='M18.5 18.5c8 6 8 21 0 27M45.5 18.5c-8 6-8 21 0 27'/%3E%3C/g%3E%3C/svg%3E">
@@ -922,7 +922,9 @@ const G={
   timer:HUMAN_TURN, timerId:null, aiTimer:null, immunityTimer:null, clockId:null, elapsed:0,
   skillStar:null, skillUsed:false, jordanShield:true, forcedLead:-1, skillMode:null,
   star:[null,null,null], ss:[freshSS(),freshSS(),freshSS()], _noAdvance:false,
-  durantSelect:false, candidates:[], jordanSelect:false, jordanPicks:[], wildChoice:{},
+  durantSelect:false, durantCostIds:null, retakePending:-1,
+  jokicSelect:false, alexanderSelect:false, alexanderPending:null,
+  candidates:[], jordanSelect:false, jordanPicks:[], wildChoice:{},
   moveCount:0, humanTurns:0, aiTurns:0, humanStartStrength:0, humanStartBombs:0, bombPlayed:false
 };
 
@@ -962,7 +964,9 @@ function newGame(){
   clearTimers(); stopMatchClock();
   G.skillStar=null; G.skillUsed=false; G.jordanShield=true; G.forcedLead=-1; G.skillMode=null; G.moveCount=0;
   G.star=[null,null,null]; G.ss=[freshSS(),freshSS(),freshSS()]; G._noAdvance=false;
-  G.durantSelect=false; G.candidates=[]; G.jordanSelect=false; G.jordanPicks=[]; G.wildChoice={};
+  G.durantSelect=false; G.durantCostIds=null; G.retakePending=-1;
+  G.jokicSelect=false; G.alexanderSelect=false; G.alexanderPending=null;
+  G.candidates=[]; G.jordanSelect=false; G.jordanPicks=[]; G.wildChoice={};
   G.bombPlayed=false; G.bombCount=0; G.elapsed=0; G.humanTurns=0; G.aiTurns=0;
   G.players.forEach(p=>p.hand=[]); G.bottom=[]; G.landlord=-1; G.lastMove=null; G.lastSeat=-1; G.seatLast=[null,null,null];
   G.mult=1; G.doubleDone=false; G.passes=0;
@@ -1306,7 +1310,7 @@ var SIM_MODE=false;   // v1.9.7：无头仿真/回归模式，基德分配自动
 /* pickTwoLowest → rules.js（经 window 全局提供） */
 function freshSS(){ return { used:{}, foul:{}, drawn:{}, types:new Set(), pairs:0, discarded:0, duncanBlocks:0,
   jokicUsed:false, curryUsed:0, hardenUsed:false, lebronUsed:false, wembyUsed:false,
-  oNealUsed:false, durantUsed:false, retakeReady:false, _lastHadMax:false,
+  oNealUsed:false, durantUsed:false, retakeReady:false, retakeCtx:null, _lastHadMax:false,
   doncicUsed:false, wildIds:[], kiddSeen:false,
   // v1.1 扩库新10人状态
   giannisUsed:false, gFoul:0, edwardsUsed:false, edwardsBoost:0, mitchellUsed:false, cunninghamCount:0,
@@ -1384,29 +1388,57 @@ function duncanBlocks(target, from, label){
   log(`🛡 ${G.players[target].name}·石佛：免疫 ${G.players[from].name} 的${label}`);
   return true;
 }
-function jokicSwap(seat){
+/* v1.9.9d · 定稿 A2/H3：涉及选择其他玩家的技能，候选目标与候选牌索引一律打乱；
+ * A4：亚历山大抽牌后由玩家自选保留 / 弃掉（AI 与无头仿真走策略）；
+ * 所有改动手牌的技能在这里显式 sortHand，保证手牌始终降序。 */
+function shuffledTargets(seat){
+  const a=oppAll(seat).filter(s=>G.players[s].hand.length>0);
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+function shuffledPick(arr){
+  if(!arr.length) return undefined;
+  const idx=arr.map((c,i)=>i);
+  for(let i=idx.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [idx[i],idx[j]]=[idx[j],idx[i]]; }
+  return arr[idx[0]];
+}
+function jokicSwap(seat, target){
   const S=G.ss[seat]; if(S.jokicUsed) return; const hand=G.players[seat].hand;
-  const others=oppAll(seat).filter(s=>G.players[s].hand.length>0);
+  const others=shuffledTargets(seat);
   if(!others.length||hand.length===0) return;
-  const os=others[Math.floor(Math.random()*others.length)];
+  const os=(target!==undefined && others.includes(target))?target:others[0];
   if(duncanBlocks(os, seat, '移花接木换牌')){ S.jokicUsed=true; return; }
-  const oc=G.players[os].hand[Math.floor(Math.random()*G.players[os].hand.length)];
+  const oh=G.players[os].hand;
+  const oc=shuffledPick(oh); if(!oc) return;
   const wc=worstCardOf(hand);
   G.players[seat].hand=hand.filter(c=>c.id!==wc.id).concat([oc]);
-  G.players[os].hand=G.players[os].hand.filter(c=>c.id!==oc.id).concat([wc]);
-  S.jokicUsed=true; log(`🔄 ${G.players[seat].name}·移花接木：与 ${G.players[os].name} 互换一张牌`);
+  G.players[os].hand=oh.filter(c=>c.id!==oc.id).concat([wc]);
+  sortHand(G.players[seat].hand); sortHand(G.players[os].hand);
+  S.jokicUsed=true; log(`🔄 ${G.players[seat].name}·移花接木：与 ${G.players[os].name} 互换一张牌`,seat===0);
 }
-function alexanderDraw(seat, target){
+/* v1.9.9d：修掉旧表达式 (card.v>=11||card.v>=16||...) 中被 >=11 完全覆盖的死条件。 */
+function alexanderKeepPolicy(card){ return card.v>=11 || Math.random()<0.5; }
+function alexanderDraw(seat, target, keepChoice){
   const S=G.ss[seat]; if(S.drawn[target]) return; const tgt=G.players[target].hand; if(!tgt.length){ S.drawn[target]=true; return; }
   if(duncanBlocks(target, seat, '造犯规抽牌')){ S.drawn[target]=true; return; }
-  const idx=Math.floor(Math.random()*tgt.length); const card=tgt[idx]; S.drawn[target]=true;
-  const keep=(card.v>=11||card.v>=16||Math.random()<0.5);
-  if(keep){ G.players[seat].hand=G.players[seat].hand.concat([card]); G.players[target].hand=tgt.filter(c=>c.id!==card.id); log(`🃏 ${G.players[seat].name}·造犯规：抽取 ${G.players[target].name} 一张牌（保留）`); }
-  else { G.players[target].hand=tgt.filter(c=>c.id!==card.id); log(`🃏 ${G.players[seat].name}·造犯规：抽取 ${G.players[target].name} 一张牌（弃掉）`); }
+  const card=shuffledPick(tgt); if(!card) return;
+  S.drawn[target]=true;
+  G.players[target].hand=tgt.filter(c=>c.id!==card.id); sortHand(G.players[target].hand);
+  // 真机真人：先弹出「保留 / 弃掉」选择，玩家决定后才结算；SIM_MODE 与 AI 立即按策略结算
+  if(seat===0 && !SIM_MODE && keepChoice===undefined){
+    G.alexanderSelect=true; G.alexanderPending={card,target};
+    log(`🃏 ${G.players[seat].name}·造犯规：从 ${G.players[target].name} 手中盲抽到一张牌，待决定留弃`,true);
+    return;
+  }
+  alexanderSettle(seat,target,card,(keepChoice===undefined)?alexanderKeepPolicy(card):!!keepChoice);
+}
+function alexanderSettle(seat,target,card,keep){
+  if(keep){ G.players[seat].hand=G.players[seat].hand.concat([card]); sortHand(G.players[seat].hand); }
+  log(`🃏 ${G.players[seat].name}·造犯规：抽取 ${G.players[target].name} 一张牌（${keep?'保留入手':'弃掉'}）`,seat===0);
 }
 function doncicMaybeCopy(seat){
   const S=G.ss[seat]; if(S.doncicUsed) return; const hand=G.players[seat].hand;
-  if(S.types.size>=3){ const mx=maxNonJokerOf(hand); if(mx){ const src=hand.find(c=>c.v===mx); if(src){ G.players[seat].hand=hand.concat([{...src,id:'CP'+(++CARD_SEQ)}]); S.doncicUsed=true; log(`✨ ${G.players[seat].name}·luka magic：复制一张 ${LABEL[mx]}`); } } }
+  if(S.types.size>=3){ const mx=maxNonJokerOf(hand); if(mx){ const src=hand.find(c=>c.v===mx); if(src){ G.players[seat].hand=hand.concat([{...src,id:'CP'+(++CARD_SEQ)}]); sortHand(G.players[seat].hand); S.doncicUsed=true; log(`✨ ${G.players[seat].name}·luka magic：复制一张 ${LABEL[mx]}`); } } }
 }
 function nowitzkiMaybeDiscard(seat){
   const S=G.ss[seat]; const hand=G.players[seat].hand;
@@ -1466,6 +1498,7 @@ function preTurnSkills(seat, prev){
         if(!duncanBlocks(f, seat, 'showtime 塞牌')){
           G.players[seat].hand=hand.filter(c=>c.id!==give.id);
           G.players[f].hand=G.players[f].hand.concat([give]);
+          sortHand(G.players[seat].hand); sortHand(G.players[f].hand);
           log(`🎩 ${G.players[seat].name}·showtime：把 ${LABEL[give.v]} 传给 ${G.players[f].name}`); } } }
   }
 }
@@ -1482,17 +1515,75 @@ function tryHardenCombo(seat, mv){
   else G._noAdvance=false;   // 第一手已终结对局：清连击标记，避免回合卡死
   return true;
 }
+/* ================= v1.9.9d 杜兰特·死神降临：共用重夺结算 =================
+ * 定稿 A8：代价 = 「出牌后手中最大的非王牌」，不是任意 >10 的牌；
+ * 「重夺」= 被压的当下立刻拿回出牌权（清台面牌 / pass），而不是等收牌后自由领出。
+ * 真人走 enterDurantRetake 面板，AI 与无头体检台走 autoPlaySeat 开头的自动分支，
+ * 两者共用 durantRetake / durantDecline，避免两套口径。 */
+function durantMaxCost(seat){
+  const hand=G.players[seat].hand;
+  if(hand.length<=1) return null;                 // 只剩 1 张时不发动，避免弃空手直接终局
+  const cand=hand.filter(c=>c.v<=15);            // 大小王 v=16/17 不作为代价
+  return cand.length? cand.reduce((a,b)=>b.v>a.v?b:a) : null;
+}
+function durantRetake(seat, card){
+  const S=G.ss[seat];
+  if(!S || !S.retakeReady || S.durantUsed || !card) return false;
+  if(!G.players[seat].hand.some(c=>c.id===card.id)) return false;
+  G.players[seat].hand=G.players[seat].hand.filter(c=>c.id!==card.id);
+  sortHand(G.players[seat].hand);
+  S.durantUsed=true; S.retakeReady=false; S.retakeCtx=null; S._lastHadMax=false;
+  G.lastMove=null; G.passes=0; G.lastSeat=seat; G.turn=seat; G.retakePending=-1;
+  log(`💀 ${G.players[seat].name}·死神降临：弃 ${LABEL[card.v]}（出牌后手中最大非王牌）重夺出牌权`,seat===0);
+  if(G.players[seat].hand.length===0){ endGame(seat); return true; }
+  renderAll();
+  return true;
+}
+function durantDecline(seat){
+  const S=G.ss[seat], ctx=S.retakeCtx;
+  S.retakeReady=false; S.durantUsed=true; S.retakeCtx=null; S._lastHadMax=false;
+  G.durantSelect=false; G.durantCostIds=null;
+  if(ctx){ G.lastMove=ctx.lastMove; G.lastSeat=ctx.lastSeat; G.passes=ctx.passes; G.turn=ctx.nextSeat; }
+  else { G.lastMove=null; G.passes=0; G.turn=seat; }
+  G.retakePending=-1;
+  log(`💀 ${G.players[seat].name}·死神降临：放弃重夺，回合按原顺序继续`,seat===0);
+  return ctx||null;
+}
+/* 约基奇 / 亚历山大：AI 在领出与跟牌两个分支都能发动，与真人手动按钮的可用时机对齐。 */
+function autoActiveSkills(seat){
+  if(SKILLS_OFF) return;
+  const st=G.star[seat], S=G.ss[seat], hand=G.players[seat].hand;
+  if(!st||!S) return;
+  if(st==='jokic' && !S.jokicUsed && hand.length>1) jokicSwap(seat);
+  if(st==='alexander'){ const t=Object.keys(S.foul).find(k=>(S.foul[k]||0)>=4 && !S.drawn[k]); if(t!==undefined) alexanderDraw(seat,+t); }
+}
+/* 真人「发动技能」的无 DOM 核心，供体检台 human 模式直接调用（单一真源，不复刻旧逻辑）。 */
+function humanManualSkill(seat,opt){
+  opt=opt||{}; const st=G.star[seat], S=G.ss[seat], hand=G.players[seat].hand;
+  if(SKILLS_OFF||!st||!S) return false;
+  if(st==='jokic' && !S.jokicUsed && hand.length>1){ jokicSwap(seat,opt.target); return true; }
+  if(st==='alexander'){
+    const t=(opt.target!==undefined)?opt.target:Object.keys(S.foul).find(k=>(S.foul[k]||0)>=4 && !S.drawn[k]);
+    if(t!==undefined){ alexanderDraw(seat,+t,opt.keep); return true; }
+  }
+  return false;
+}
 /* 统一驱动：人类(强策略)/AI 座(原 aiChoose 保留平衡削弱) 均走此函数，技能机制完全通用 */
 function autoPlaySeat(seat, prev){
   const st=G.star[seat], S=G.ss[seat];
   if(SKILLS_OFF || !st){ const mv=(seat===0)?(prev?strongPick(seat,genBeatingForSeat(seat,prev),prev):strongPick(seat,genAllForSeat(seat),null)):aiChoose(seat,prev); applyMove(seat,mv); return; }
   const hand=G.players[seat].hand;
   if(S.frozen){ S.frozen=false; log(`🧊 ${G.players[seat].name} 被冻结，跳过本回合`); applyMove(seat,null); return; }
+  // v1.9.9d：被压后已抢回出牌权，AI 立即弃最大非王牌并重新领出；无可弃牌则放弃并还原回合
+  if(st==='durant' && S.retakeReady && !S.durantUsed){
+    const dc=durantMaxCost(seat);
+    if(dc){ if(!durantRetake(seat,dc)) return; prev=null; }
+    else { const cx=durantDecline(seat); clearTimers(); renderAll(); if(cx) nextTurn(); else { prev=null; } if(cx) return; }
+    if(G.phase!=='play') return;
+  }
   if(!prev){ // ---------- 领出 ----------
     if(st==='kobe'){ const all=genAllForSeat(seat); const fin=all.find(m=>m.cards.length===hand.length); if(fin){ G.ss[seat].kobeUsed=true; commitMove(seat,fin); return; } }
-    if(st==='durant' && S.retakeReady && !S.durantUsed){ const cand=hand.filter(c=>c.v>=11 && c.v<=15); if(cand.length){ cand.sort((a,b)=>a.v-b.v); const dc=cand[0]; G.players[seat].hand=hand.filter(c=>c.id!==dc.id); S.durantUsed=true; S.retakeReady=false; G.lastMove=null; G.passes=0; log(`💀 ${G.players[seat].name}·死神降临：弃 ${LABEL[dc.v]}（>10）重夺出牌权`); } }
-    if(st==='jokic' && !S.jokicUsed && hand.length>1){ jokicSwap(seat); }
-    if(st==='alexander'){ const t=Object.keys(S.foul).find(k=>(S.foul[k]||0)>=4 && !S.drawn[k]); if(t!==undefined) alexanderDraw(seat, +t); }
+    autoActiveSkills(seat);      // v1.9.9d：约基奇 / 亚历山大 领出前可发动
     preTurnSkills(seat, null);   // v1.9.9c：领出前自动技能，真人与 AI 共用
     const all=genAllForSeat(seat);
     const mv=(seat===0)? strongPick(seat, all, null) : aiChoose(seat, null);
@@ -1504,6 +1595,7 @@ function autoPlaySeat(seat, prev){
     applyMove(seat,null); return;
   } else { // ---------- 跟牌 ----------
     if(st==='lebron' && !S.lebronUsed && prev.type==='single' && G.passes>=1){ G.players[seat].hand=G.players[seat].hand.concat([prev.cards[0]]); G.lastMove=null; G.passes=0; S.lebronUsed=true; log(`👑 ${G.players[seat].name}·加冕：截下 ${LABEL[prev.cards[0].v]} 并领出`); const a2=genAllForSeat(seat); const m2=(seat===0)?strongPick(seat,a2,null):aiChoose(seat,null); if(m2) commitMove(seat,m2); else applyMove(seat,null); return; }
+    autoActiveSkills(seat);      // v1.9.9d：跟牌阶段同样可发动，与真人手动按钮时机对齐
     preTurnSkills(seat, prev);   // v1.9.9c：跟牌前自动技能，真人与 AI 共用
     // v1.3 爱德华兹·三分暴雨：跟牌不再生成合成对；每局 3 次免费清牌统一在 commitMove 结算
     const mv=(seat===0)? strongPick(seat, genBeatingForSeat(seat,prev), prev) : aiChoose(seat, prev);
@@ -1614,8 +1706,17 @@ function commitMove(seat,mv){
         log(`💥 ${G.players[victim].name}·字母轰炸：造犯规 ${GSy.gFoul}/4`);
       }
     }
-    // 杜兰特·死神降临：本座上次打出含最大牌且被压 → 标记可重夺
-    if(victim>=0 && G.star[victim]==="durant" && !G.ss[victim].durantUsed && G.ss[victim]._lastHadMax){ G.ss[victim].retakeReady=true; }
+    // v1.9.9d 杜兰特·死神降临（定稿 A8）：被压的当下立刻抢回出牌权，
+    // 清台面牌与 pass 计数，并把下一回合直接指回杜兰特；真人面板与 AI 领出都能即刻生效。
+    if(victim>=0 && G.star[victim]==="durant" && !G.ss[victim].durantUsed
+       && G.ss[victim]._lastHadMax && durantMaxCost(victim)){
+      const DS=G.ss[victim];
+      DS.retakeReady=true;
+      DS.retakeCtx={lastMove:mv, lastSeat:seat, passes:0, nextSeat:(seat+1)%3};
+      G.lastMove=null; G.passes=0; G.retakePending=victim;
+      setPhaseTxt(`💀 ${G.players[victim].name}·死神降临：重夺出牌权`);
+      log(`💀 ${G.players[victim].name}·死神降临：可弃出牌后最大非王牌重夺出牌权`,victim===0);
+    }
     // v1.1 加内特·铁血全能：被压时随机补一张≤K牌并弃最小牌（1局2次）
     if(victim>=0 && G.star[victim]==="kg" && G.ss[victim].kgUsed<2 && isFoe(seat,victim)){
       G.ss[victim].kgUsed++;
@@ -1632,6 +1733,7 @@ function commitMove(seat,mv){
     setBubble(seat,"不出");
     log(`${G.players[seat].name} 不出`, seat===0);
   }
+  [0,1,2].forEach(s=>sortHand(G.players[s].hand));   // v1.9.9d：任何技能改牌后统一恢复降序
   renderAll();
   if(G.players[seat].hand.length===0){ endGame(seat); return; }
   if(G.passes>=2){
@@ -1648,6 +1750,7 @@ function commitMove(seat,mv){
     // v1.6 扬尼斯·字母轰炸：旧「收牌后弃牌」已废弃（与坎宁安机制重叠），新机制见 commitMove 被压分支（造犯规满4点弃一张并清零）
     G.turn=lead; G.lastMove=null; G.passes=0; setPhaseTxt(`${G.players[lead].name} 获得自由出牌`);
   }
+  else if(G.retakePending>=0){ G.turn=G.retakePending; G.retakePending=-1; }
   else { G.turn=(seat+1)%3; }
   nextTurn();
 }
@@ -1660,16 +1763,17 @@ function moveName(mv){
 
 /* ---- 玩家回合 ---- */
 let selected=new Set();
-function enableHumanTurn(){
+function enableHumanTurn(preserveSel){
   // v1.9.9c：真人回合补齐「被冻结跳过」与「领出/跟牌前自动技能」，与 AI 路径对齐
+  // v1.9.9d：preserveSel=true 用于技能面板结束后恢复回合，不清空玩家已选中的牌
   if(G.phase==='play' && !SKILLS_OFF){
     if(G.ss[0].frozen){ G.ss[0].frozen=false; log('🧊 你被冻结，跳过本回合',true); applyMove(0,null); return; }
     preTurnSkills(0, G.lastMove);
   }
-  selected.clear();
+  if(!preserveSel) selected.clear();
   updateTurnUI();
-  // 杜兰特·死神降临：重夺选择模式（仅限真实 UI 人类，headless 由 autoPlaySeat 自动弃最小>10牌）
-  if(G.star[0]==='durant' && G.ss[0].retakeReady && !G.ss[0].durantUsed && G.phase==='play' && !G.lastMove){
+  // v1.9.9d 杜兰特·死神降临：被压后已抢回出牌权，此处必定弹出重夺面板
+  if(G.star[0]==='durant' && G.ss[0].retakeReady && !G.ss[0].durantUsed && G.phase==='play'){
     enterDurantRetake(); return;
   }
   renderHand();
@@ -1684,21 +1788,25 @@ function enableHumanTurn(){
   renderHumanControls();
 }
 function enterDurantRetake(){
+  const mx=durantMaxCost(0);
+  if(!mx){
+    const cx=durantDecline(0); clearTimers(); renderAll();
+    if(cx) nextTurn(); else enableHumanTurn(true);
+    return;
+  }
   G.durantSelect=true;
-  setPhaseTxt("💀 死神降临：选择一张大于10的牌（J/Q/K/A/2）弃掉以重夺出牌权，或放弃");
+  G.durantCostIds=new Set(G.players[0].hand.filter(c=>c.v===mx.v).map(c=>c.id));
+  setPhaseTxt(`💀 死神降临：弃掉手中最大的 ${LABEL[mx.v]} 重夺出牌权，或放弃`);
   renderHand();
   const c=document.getElementById("controls");c.innerHTML="";
   const give=document.createElement("button");give.className="btn";give.textContent="放弃重夺";
-  give.onclick=()=>{ G.durantSelect=false; G.ss[0].retakeReady=false; G.ss[0].durantUsed=true; log("💀 死神降临：放弃重夺",true); enableHumanTurn(); };
+  give.onclick=()=>{ const cx=durantDecline(0); clearTimers(); renderAll(); if(cx) nextTurn(); else enableHumanTurn(true); };
   c.appendChild(give);
 }
 function doDurantDiscard(c){
-  G.players[0].hand=G.players[0].hand.filter(x=>x.id!==c.id);
-  G.ss[0].durantUsed=true; G.ss[0].retakeReady=false; G.durantSelect=false;
-  G.lastMove=null; G.passes=0;
-  log(`💀 ${G.players[0].name}·死神降临：弃 ${LABEL[c.v]}（>10）重夺出牌权`,true);
-  renderAll();
-  enableHumanTurn();   // 重夺后正常出牌
+  if(!durantRetake(0,c)) return;
+  if(G.phase!=='play') return;
+  enableHumanTurn(true);   // 重夺后重新领出，保留此前已选中的牌
 }
 /* ---- 真人主动技能：点击只发动技能，绝不自动出牌（避免"技能可无限用"错觉） ---- */
 function isManualStar(st){ return st==='curry'||st==='alexander'||st==='lebron'||st==='jokic'; }
@@ -1717,16 +1825,62 @@ function skillUnavailText(st){ const S=G.ss[0];
   if(st==='jokic') return '已用尽';
   return '';
 }
+/* v1.9.9d 定稿 A2/H3：约基奇真人指定目标，两个对手的呈现顺序每次都打乱；
+ * 取消后不消耗次数、不清空已选中的牌。 */
+function enterJokicTargetSelect(){
+  clearTimers(); G.jokicSelect=true;
+  const targets=shuffledTargets(0);
+  setPhaseTxt("🔄 移花接木：选择一名对手互换一张手牌（对手顺序已打乱）");
+  const c=document.getElementById("controls"); c.innerHTML="";
+  targets.forEach(s=>{
+    const b=document.createElement("button"); b.className="btn go";
+    b.textContent=`🔄 与 ${G.players[s].name} 互换一张牌`;
+    b.onclick=()=>{ G.jokicSelect=false; humanManualSkill(0,{target:s}); renderAll(); enableHumanTurn(true); };
+    c.appendChild(b);
+  });
+  const cancel=document.createElement("button"); cancel.className="btn"; cancel.textContent="取消（不消耗次数）";
+  cancel.onclick=()=>{ G.jokicSelect=false; renderAll(); enableHumanTurn(true); };
+  c.appendChild(cancel);
+  renderHand();
+}
+/* v1.9.9d 定稿 A4：抽到牌后由玩家选择保留入手或弃掉。 */
+function enterAlexanderKeepSelect(){
+  clearTimers();
+  const p=G.alexanderPending;
+  if(!p){ G.alexanderSelect=false; renderAll(); enableHumanTurn(true); return; }
+  setPhaseTxt(`🃏 造犯规：盲抽到 ${LABEL[p.card.v]}，选择保留或弃掉`);
+  const c=document.getElementById("controls"); c.innerHTML="";
+  const show=document.createElement("div"); show.className="waitingNote";
+  show.style.cssText="text-align:center;padding:10px;font-size:15px;font-weight:700;color:rgba(6,27,49,.78)";
+  show.innerHTML=`盲抽到：<b>${LABEL[p.card.v]}</b>`;
+  c.appendChild(show);
+  const keep=document.createElement("button"); keep.className="btn go"; keep.textContent="🃏 保留入手";
+  keep.onclick=()=>alexanderChoose(true);
+  const drop=document.createElement("button"); drop.className="btn"; drop.textContent="弃掉";
+  drop.onclick=()=>alexanderChoose(false);
+  c.append(keep,drop);
+  renderHand();
+}
+function alexanderChoose(keep){
+  const p=G.alexanderPending;
+  G.alexanderSelect=false; G.alexanderPending=null;
+  if(p) alexanderSettle(0,p.target,p.card,!!keep);
+  renderAll(); enableHumanTurn(true);
+}
 function humanUseSkill(){
   const seat=0, st=G.star[0], S=G.ss[0], hand=G.players[0].hand, prev=G.lastMove;
   if(st==='curry' && S.curryUsed<2){ const t=curryReorgMove(0); if(t){ S.curryUsed++; log(`🏀 ${G.players[0].name}·百步穿杨：重组三连`,true); commitMove(0,t); return; } }
-  if(st==='alexander'){ const t=Object.keys(S.foul).find(k=>(S.foul[k]||0)>=4 && !S.drawn[k]);
-    if(t!==undefined){ alexanderDraw(0,+t); log(`🏀 你发动了【造犯规】`,true); enableHumanTurn(); return; } }
   if(st==='lebron' && !S.lebronUsed && prev && prev.type==='single' && G.passes>=1){
-    G.players[0].hand=G.players[0].hand.concat([prev.cards[0]]); G.lastMove=null; G.passes=0; S.lebronUsed=true;
+    G.players[0].hand=G.players[0].hand.concat([prev.cards[0]]); sortHand(G.players[0].hand); G.lastMove=null; G.passes=0; S.lebronUsed=true;
     log(`👑 ${G.players[0].name}·加冕：截下 ${LABEL[prev.cards[0].v]} 并领出`,true);
     const a2=genAllForSeat(0); const m2=strongPick(0,a2,null); if(m2) commitMove(0,m2); else applyMove(0,null); return; }
-  if(st==='jokic' && !S.jokicUsed && hand.length>1){ jokicSwap(0); log(`🏀 你发动了【移花接木】`,true); enableHumanTurn(); return; }
+  if(st==='jokic' && !SIM_MODE && !S.jokicUsed && hand.length>1){ enterJokicTargetSelect(); return; }
+  if(st==='jokic'||st==='alexander'){
+    if(humanManualSkill(0,{})){
+      if(G.alexanderSelect){ enterAlexanderKeepSelect(); return; }   // 等待玩家决定留弃
+      renderAll(); enableHumanTurn(true); return;                    // 不再重复日志、不清空选中牌
+    }
+  }
   log('🏀 当前没有可用的主动技能',true); renderHumanControls();
 }
 function renderHumanControls(){
@@ -2041,7 +2195,7 @@ function renderSkillStatus(){
   let used="可用";
   if(k==="curry") used=S.curryUsed>=2?"已用 · 2/2":"可用 · "+(2-S.curryUsed)+"/2";
   else if(k==="kg") used=(S.kgUsed||0)>=2?"已用 · 2/2":"可用 · "+(2-(S.kgUsed||0))+"/2";
-  else if(k==="durant") used=S.durantUsed?"已用 · 一局一次":(S.retakeReady?"可发动 · 弃大牌重夺出牌权":"待触发 · 被压时可重夺");
+  else if(k==="durant") used=S.durantUsed?"已用 · 一局一次":(S.retakeReady?"可发动 · 弃手中最大非王牌重夺出牌权":"待触发 · 打出含最大牌的牌型且被压");
   else if(k==="harden"||k==="jokic"||k==="lebron"||k==="mitchell"||k==="magic"||k==="leonard") used=S[k+"Used"]?"已用 · 一局一次":"可用 · 一局一次";
   else if(k==="wembanyama") used=S.wembyUsed?"已用 · 一局一次":"可抵消炸弹 · 王炸除外";
   else if(k==="doncic") used=S.doncicUsed?"已触发":"待命 · 已打出 "+(S.types?S.types.size:0)+" 种牌型";
@@ -2147,11 +2301,12 @@ function renderHand(){
   const h=document.getElementById("hand");h.innerHTML="";
   const dMode=!!G.durantSelect;
   const wMode=!!G.jordanSelect;
+  const modal=!!(G.jokicSelect||G.alexanderSelect);
   pruneWildChoice();
   G.players[0].hand.forEach((c,idx)=>{
     const el=document.createElement("div");
     el.style.animationDelay=(idx*26)+"ms";
-    const canPick=!dMode || (c.v>=11 && c.v<=15);
+    const canPick=!dMode || !!(G.durantCostIds && G.durantCostIds.has(c.id));
     const isWild=(G.ss[0] && G.ss[0].wildIds && (G.ss[0].wildIds.includes(c.id) || G.jordanPicks.includes(c.id)));
     const isPicked=G.jordanPicks.includes(c.id);
     el.className="card"+(c.red?" red":"")+(selected.has(c.id)?" sel":"")+(isWild?" wild":"")+(isPicked?" picked":"")+(dMode && !canPick?" dim":"");
@@ -2163,7 +2318,7 @@ function renderHand(){
         else if(G.jordanPicks.length<JORDAN_WILDS) G.jordanPicks.push(c.id);
         renderHand(); updateJordanConfirm(); return;
       }
-      if(G.phase!=="play"||G.turn!==0)return;
+      if(G.phase!=="play"||G.turn!==0||modal)return;
       if(dMode){ if(canPick) doDurantDiscard(c); return; }
       if(selected.has(c.id))selected.delete(c.id);
       else { selected.add(c.id); SFX.select();
@@ -2172,6 +2327,7 @@ function renderHand(){
       renderHand(); updatePlayBtn();};
     if(wMode){ el.style.cursor="pointer"; }
     if(dMode && !canPick){ el.style.opacity=".3"; el.style.cursor="not-allowed"; }
+    if(modal){ el.style.cursor="default"; }
     h.appendChild(el);
   });
   renderWildPicker();
@@ -2286,7 +2442,7 @@ function exportTelemetry(){
 function clearTelemetry(){ try{ localStorage.removeItem(TELE_KEY); }catch(e){} showTelemetry(); }
 
 /* ============ v1.9.8 试玩反馈卡：纯前端生成 + 一键复制，零后端 / 零上传 / 零身份信息 ============ */
-const FB_VER="v1.9.9c", FB_BUILD="20261120c";
+const FB_VER="v1.9.9d", FB_BUILD="20261120d";
 function fbDevice(){
   const ua=navigator.userAgent||"";
   let os="其他设备";

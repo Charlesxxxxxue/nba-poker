@@ -18,7 +18,8 @@ const RULES = path.join(DIR, 'rules.js');
 const GAMES = Number(process.argv[2] || 5);
 /* auto  = 引擎统一决策路径（AI 座 / 无头仿真 / 平衡台口径）
  * human = 真人手动出牌路径。v1.9.9c 起不再「复刻一份简化旧逻辑」，而是直接复用
- *         引擎里真实的 preTurnSkills / matchPlayMove / tryHardenCombo，
+ *         引擎里真实的 preTurnSkills / matchPlayMove / tryHardenCombo；
+ *         v1.9.9d 起补 humanManualSkill（约基奇 / 亚历山大主动技能按钮），
  *         即 enableHumanTurn → onPlay → applyMove 的完整真人链路。
  *         这样双路径体检才不会与线上代码漂移。 */
 const MODE = (process.env.BENCH_MODE || 'auto').toLowerCase();
@@ -136,9 +137,18 @@ function runOne(key, seed) {
       }
       // ② 领出 / 跟牌前自动技能（米切尔冻结 / 魔术师塞牌）
       if (!ctx.SKILLS_OFF) ctx.preTurnSkills(0, G.lastMove);
+      // ③ v1.9.9d：模拟真人点「发动技能」按钮，直接调用引擎真身 humanManualSkill，
+      //    覆盖约基奇换牌 / 亚历山大抽牌留弃（发动后仍需玩家自己出牌，不改出牌权）。
+      if (!ctx.SKILLS_OFF && ctx.skillAvailable && ctx.skillAvailable(0)) {
+        const st0 = G.star[0];
+        if (st0 === 'jokic' || st0 === 'alexander') {
+          ctx.humanManualSkill(0, {});
+          if (ctx.G.alexanderSelect && ctx.alexanderChoose) ctx.alexanderChoose(true);
+        }
+      }
       const prev = G.lastMove;
       const hand = G.players[0].hand;
-      // ③ 模拟玩家点「提示出牌」(showHint 用 genBeatingForSeat / genAllForSeat，
+      // ④ 模拟玩家点「提示出牌」(showHint 用 genBeatingForSeat / genAllForSeat，
       //    按牌数升序取第一手) → 点「出牌」(onPlay 的 parseMove → matchPlayMove
       //    → beats → tryHardenCombo)。这是真机上最常用的一条选牌链路。
       let pool = prev ? ctx.genBeatingForSeat(0, prev)
@@ -294,10 +304,14 @@ if (low.length) console.log('低频/未观测到触发（不等于 bug）：' + 
 const FOCUS = ['harden','mitchell','magic','wade','brunson','kareem'];
 console.log('\n=== 补丁 c 接线 6 技能触发（' + MODE + ' 路径）===');
 for (const r of rows.filter(x => FOCUS.includes(x.key))) console.log('  ' + (r.key + '/' + r.name).padEnd(18) + '触发 ' + r.trigger);
+// v1.9.9d：三星专项单独对照
+const THREE = ['jokic','alexander','durant'];
+console.log('\n=== 补丁 d 三星专项触发（' + MODE + ' 路径）===');
+for (const r of rows.filter(x => THREE.includes(x.key))) console.log('  ' + (r.key + '/' + r.name).padEnd(18) + '触发 ' + r.trigger);
 
 const out = path.join(DIR, MODE === 'human'
-  ? '验收_25星5局体检_真人路径_v1.9.9c.json'
-  : '验收_25星5局体检_v1.9.9c.json');
-fs.writeFileSync(out, JSON.stringify({ version: 'v1.9.9c', build: '20261120c', mode: MODE, gamesPerStar: GAMES, rows, detail: all }, null, 2), 'utf8');
+  ? '验收_25星5局体检_真人路径_v1.9.9d.json'
+  : '验收_25星5局体检_v1.9.9d.json');
+fs.writeFileSync(out, JSON.stringify({ version: 'v1.9.9d', build: '20261120d', mode: MODE, gamesPerStar: GAMES, rows, detail: all }, null, 2), 'utf8');
 console.log('\nJSON: ' + out);
 if (totalViolations > 0) process.exitCode = 1;
