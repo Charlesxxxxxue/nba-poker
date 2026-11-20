@@ -271,6 +271,6 @@ if (low.length) console.log('低频/未观测到触发（不等于 bug）：' + 
 const out = path.join(DIR, MODE === 'human'
   ? '验收_25星5局体检_真人路径_v1.9.9.json'
   : '验收_25星5局体检_v1.9.9.json');
-fs.writeFileSync(out, JSON.stringify({ version: 'v1.9.9', build: '20261120a', mode: MODE, gamesPerStar: GAMES, rows, detail: all }, null, 2), 'utf8');
+fs.writeFileSync(out, JSON.stringify({ version: 'v1.9.9', build: '20261120b', mode: MODE, gamesPerStar: GAMES, rows, detail: all }, null, 2), 'utf8');
 console.log('\nJSON: ' + out);
 if (totalViolations > 0) process.exitCode = 1;

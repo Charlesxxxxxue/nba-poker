@@ -4,7 +4,7 @@
 <meta charset="UTF-8" data-page-node-id="GqUavfoCHzaA4SQOFX9HJY">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" data-page-node-id="HLbLnKHQUaZq0cvHfzMR8X">
 <title>NBA Poker · 可玩原型 v1.9.9 · 卡面 V1.0（S4 泼墨 · 25 星 · 无水印）</title>
-<!-- build:20261120a · 修复哈登连击复用牌 + 库里百步穿杨恒不触发；25 星 5 局体检 0 违规 -->
+<!-- build:20261120b · 哈登连击/库里重组修复 + 幻影牌不污染记牌器 + 伯德状态栏补标记；25 星 5 局体检 0 违规 -->
 <!-- 内联图标：避免浏览器默认请求 /favicon.ico 与 /apple-touch-icon.png 产生 404 控制台噪音 -->
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23070c18'/%3E%3Ccircle cx='32' cy='32' r='19' fill='%23d98b3a'/%3E%3Cg fill='none' stroke='%23070c18' stroke-width='2.6'%3E%3Cpath d='M32 13v38M13 32h38'/%3E%3Cpath d='M18.5 18.5c8 6 8 21 0 27M45.5 18.5c-8 6-8 21 0 27'/%3E%3C/g%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23070c18'/%3E%3Ccircle cx='32' cy='32' r='19' fill='%23d98b3a'/%3E%3Cg fill='none' stroke='%23070c18' stroke-width='2.6'%3E%3Cpath d='M32 13v38M13 32h38'/%3E%3Cpath d='M18.5 18.5c8 6 8 21 0 27M45.5 18.5c-8 6-8 21 0 27'/%3E%3C/g%3E%3C/svg%3E">
@@ -744,7 +744,7 @@ function renderWildPicker(){
 /* ---- 记牌器：全场已打出的牌（v → 已出张数） ---- */
 const SEEN={};
 function seenReset(){ for(const k in SEEN) delete SEEN[k]; }
-function seenAdd(cards){ cards.forEach(c=>{ SEEN[c.v]=(SEEN[c.v]||0)+1; }); }
+function seenAdd(cards){ cards.forEach(c=>{ if(!c.phantom) SEEN[c.v]=(SEEN[c.v]||0)+1; }); }  // v1.9.9b 幻影牌非真实离手，任何调用点都不得计入
 function isTopRemaining(v,myHand){   // 除我手牌与已打出的牌，场上是否已无更大的单张
   for(let x=v+1;x<=17;x++){
     const total=(x>=16)?1:4;
@@ -1533,7 +1533,7 @@ function commitMove(seat,mv){
     const mvMax=Math.max(0,...mv.cards.map(c=>c.v).filter(v=>v<16));
     G.ss[seat]._lastHadMax = handMaxB>0 && mvMax>=handMaxB;
     G.players[seat].hand=handBefore.filter(c=>!ids.has(c.id));
-    seenAdd(mv.cards);                                   // v0.7：AI 记牌器
+    seenAdd(mv.cards);                                   // v0.7：AI 记牌器（函数内已排除幻影牌）
     G.lastMove=mv; G.lastSeat=seat; G.passes=0;
     if(mv._bird) G.ss[seat].birdUsed=true;
     if(mv._wade) G.ss[seat].wadeCount=(G.ss[seat].wadeCount||0)+1;
@@ -1728,6 +1728,8 @@ function onPlay(){
   }
   if(!mv){alert("牌型不合法");return;}
   if(!beats(G.lastMove,mv)){alert("管不上上家");return;}
+  // v1.9.9b：伯德三带两单由真人手动选出时补技能标记，保证状态栏与 AI 路径一致
+  if(!SKILLS_OFF && G.star[0]==='bird' && mv.type==='triple1s') mv._bird=true;
   clearTimers(); selected.clear(); G.wildChoice={}; applyMove(0,mv);
 }
 function buildReorgMove(ids, seat){
@@ -2222,7 +2224,7 @@ function exportTelemetry(){
 function clearTelemetry(){ try{ localStorage.removeItem(TELE_KEY); }catch(e){} showTelemetry(); }
 
 /* ============ v1.9.8 试玩反馈卡：纯前端生成 + 一键复制，零后端 / 零上传 / 零身份信息 ============ */
-const FB_VER="v1.9.9", FB_BUILD="20261120a";
+const FB_VER="v1.9.9", FB_BUILD="20261120b";
 function fbDevice(){
   const ua=navigator.userAgent||"";
   let os="其他设备";
