@@ -23,7 +23,7 @@ function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a
 function fakeEl(){return new Proxy({style:{},classList:{add(){},remove(){},toggle(){},contains(){return false;}},_t:"",_h:"",
   set textContent(v){this._t=v;},get textContent(){return this._t;},
   set innerHTML(v){this._h=v;},get innerHTML(){return this._h;},
-  appendChild(){},append(){},querySelector(){return fakeEl();},querySelectorAll(){return [];},addEventListener(){},
+  appendChild(){},append(){},remove(){},focus(){},querySelector(){return fakeEl();},querySelectorAll(){return [];},addEventListener(){},
   set onclick(f){this._click=f;},get onclick(){return this._click;},set className(v){},get className(){return "";}},
   {get(t,p){return p in t?t[p]:undefined;},set(t,p,v){t[p]=v;return true;}});}
 const doc={getElementById(){return fakeEl();},createElement(){return fakeEl();},querySelectorAll(){return [];},addEventListener(){}};
@@ -48,6 +48,15 @@ function runOnce(policy,seed){
   ctx.applyMove =function(s,mv){ if(s===0&&mv&&(mv.type==='bomb'||mv.type==='rocket')) {} return _am(s,mv); };
   ctx.startCountdown=()=>{};
   ctx.SIM_MODE=true;   // v1.9.7：基德分配在无头仿真下自动全留，避免等待真人点击
+  /* v1.9.9c 仿真台修复：jordan 选星后引擎会进入「等真人点选万能牌」的 UI，
+   * 无头环境既没有可点的按钮、fakeEl 也缺 remove()，导致 sim 在 25 星全量重跑时
+   * 对 jordan 直接 CRASH。与 star_health_5g.js 同口径：自动指定两张最小牌为万能牌。 */
+  ctx.enterJordanWildSelect=function(){
+    const h=ctx.G.players[0].hand;
+    ctx.G.ss[0].wildIds=h.length?ctx.pickTwoLowest(h).map(c=>c.id):[];
+    ctx.G.jordanSelect=false;
+    ctx.stepBid();
+  };
   // 选星：seat0 = STAR0，seat1/2 随机旧星（含部分新星也行，保持对手有技能）
   // 控制条件修正：naive 模式让 seat0 = 无球星（清空 star/skillStar），使被动/反应钩子不再触发，
   // 从而得到「纯普通玩家」基线；skilled 模式保留 STAR0 全部技能。两模式仅 seat0 是否有星不同。
@@ -73,11 +82,11 @@ function runOnce(policy,seed){
     const S=ctx.G.ss[0]||{};
     /* v1.9.9：旧版只认 10 个扩库星字段（且把韦德写成不存在的 wadeUsed），
      * 导致 curry / harden / wade / jordan 等「明明已触发」却报 0% 触发率。
-     * 改为覆盖 25 星的状态字段；brunson / kobe 无状态标记，仍归为未观测（不等于未触发）。 */
+     * v1.9.9c：brunson / kobe 已补状态标记（_brunson 走法 / 一手清台），纳入统计。 */
     const USED_FIELDS=['jokicUsed','wembyUsed','durantUsed','hardenUsed','doncicUsed','leonardUsed',
       'kareemUsed','magicUsed','birdUsed','lebronUsed','mitchellUsed','oNealUsed','giannisUsed',
       'kiddSeen','edwardsBoost','cunninghamCount','curryUsed','kgUsed','wadeCount','duncanBlocks',
-      'retakeReady','discarded'];
+      'retakeReady','discarded','brunsonUsed','kobeUsed'];
     const used = USED_FIELDS.some(k=>(S[k]||0)>0 || S[k]===true)
       || (S.wildIds && S.wildIds.length>0)
       || Object.keys(S.foul||{}).length>0 || Object.keys(S.drawn||{}).length>0

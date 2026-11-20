@@ -17,8 +17,10 @@ const FILE = path.join(DIR, 'PLAYABLE_v1.9.html');
 const RULES = path.join(DIR, 'rules.js');
 const GAMES = Number(process.argv[2] || 5);
 /* auto  = 引擎统一决策路径（AI 座 / 无头仿真 / 平衡台口径）
- * human = 真人手动出牌路径（onPlay：parseMove + beats + applyMove），只生成标准牌型
- * 两者不等价：后者用于检验「玩家在手机上真的能触发技能吗」 */
+ * human = 真人手动出牌路径。v1.9.9c 起不再「复刻一份简化旧逻辑」，而是直接复用
+ *         引擎里真实的 preTurnSkills / matchPlayMove / tryHardenCombo，
+ *         即 enableHumanTurn → onPlay → applyMove 的完整真人链路。
+ *         这样双路径体检才不会与线上代码漂移。 */
 const MODE = (process.env.BENCH_MODE || 'auto').toLowerCase();
 const SEEDS = [20260901, 20260902, 20260903, 20260904, 20260905,
                20260906, 20260907, 20260908, 20260909, 20260910];
@@ -63,11 +65,11 @@ const EVIDENCE = {
   jokic:       (S) => !!S.jokicUsed,
   wembanyama:  (S) => !!S.wembyUsed,
   alexander:   (S) => (S.gFoul > 0) || Object.keys(S.foul || {}).length > 0 || Object.keys(S.drawn || {}).length > 0,
-  brunson:     (S, lg, fl) => fl.has('brunson_window'),
+  brunson:     (S) => !!S.brunsonUsed,
   durant:      (S) => !!S.durantUsed || !!S.retakeReady,
   harden:      (S) => !!S.hardenUsed,
   doncic:      (S) => !!S.doncicUsed || (S.types && S.types.size >= 3),
-  kobe:        (S, lg, fl) => fl.has('kobe_finish'),
+  kobe:        (S, lg, fl) => !!S.kobeUsed || fl.has('kobe_finish'),
   duncan:      (S) => (S.duncanBlocks || 0) > 0,
   oNeal:       (S) => !!S.oNealUsed,
   kidd:        (S) => !!S.kiddSeen || !!S._kiddAssigned,
@@ -122,21 +124,42 @@ function runOne(key, seed) {
   ctx.renderControls_bid = function () { ctx.doBid(0, ctx.aiBid(ctx.G.players[0].hand)); };
   ctx.renderControls_double = function () { ctx.G.doubleDone = true; ctx.startPlay(); };
   if (MODE === 'human') {
-    // 复刻真实 onPlay()：选牌 → parseMove(标准牌型) → beats() 校验 → applyMove
-    // 不调用 genAllForSeat / genBeatingForSeat，也不自动触发 autoPlaySeat 里的领出技能
+    // v1.9.9c：完整复刻真人回合链路，且三个接线函数全部调用引擎真身（单一真源）
     ctx.enableHumanTurn = function () {
       const G = ctx.G;
       if (G.phase !== 'play') return;
-      const hand = G.players[0].hand, prev = G.lastMove;
-      let cand = prev ? ctx.genBeating(hand, prev) : ctx.genAllMoves(hand);
-      cand = cand.filter(m => m.type !== 'bomb' && m.type !== 'rocket')
-                 .sort((a, b) => a.cards.length - b.cards.length || a.rank - b.rank);
-      let mv = cand.length ? ctx.parseMove(cand[0].cards) : null;
+      // ① 被冻结跳过（AI 米切尔施加在真人身上时同样生效）
+      if (!ctx.SKILLS_OFF && G.ss[0].frozen) {
+        G.ss[0].frozen = false;
+        ctx.applyMove(0, null);
+        return;
+      }
+      // ② 领出 / 跟牌前自动技能（米切尔冻结 / 魔术师塞牌）
+      if (!ctx.SKILLS_OFF) ctx.preTurnSkills(0, G.lastMove);
+      const prev = G.lastMove;
+      const hand = G.players[0].hand;
+      // ③ 模拟玩家点「提示出牌」(showHint 用 genBeatingForSeat / genAllForSeat，
+      //    按牌数升序取第一手) → 点「出牌」(onPlay 的 parseMove → matchPlayMove
+      //    → beats → tryHardenCombo)。这是真机上最常用的一条选牌链路。
+      let pool = prev ? ctx.genBeatingForSeat(0, prev)
+                      : ctx.genAllForSeat(0).filter(m => m.type !== 'bomb' && m.type !== 'rocket');
+      pool.sort((a, b) => a.cards.length - b.cards.length);
+      let mv = null;
+      if (pool.length) {
+        const cards = pool[0].cards;
+        const base = ctx.parseMove(cards);
+        const m = ctx.matchPlayMove(0, cards, base, prev);
+        if (m && (!prev || ctx.beats(prev, m))) mv = m;
+      }
       if (!mv && !prev) {                       // 领出不允许「不出」：兜底打最小单张
         const lo = hand.slice().sort((a, b) => a.v - b.v)[0];
-        mv = lo ? ctx.parseMove([lo]) : null;
+        if (lo) {
+          const base = ctx.parseMove([lo]);
+          mv = ctx.matchPlayMove(0, [lo], base, null) || base;
+        }
       }
       if (prev && mv && !ctx.beats(prev, mv)) mv = null;
+      if (!prev && mv && ctx.tryHardenCombo(0, mv)) return;   // 哈登连击（仅领出）
       ctx.applyMove(0, mv);
     };
   } else {
@@ -267,10 +290,14 @@ for (const r of rows) {
 console.log('\n合计：' + totalGames + ' 局，违规 ' + totalViolations + " 条，技能触发观测 " + totalTriggered + '/' + totalGames);
 const low = rows.filter(r => r.trigger.startsWith('0/'));
 if (low.length) console.log('低频/未观测到触发（不等于 bug）：' + low.map(r => r.key + '/' + r.name).join('、'));
+// v1.9.9c：单独打印 6 个接线技能的触发数，便于与补丁前 human 模式对照
+const FOCUS = ['harden','mitchell','magic','wade','brunson','kareem'];
+console.log('\n=== 补丁 c 接线 6 技能触发（' + MODE + ' 路径）===');
+for (const r of rows.filter(x => FOCUS.includes(x.key))) console.log('  ' + (r.key + '/' + r.name).padEnd(18) + '触发 ' + r.trigger);
 
 const out = path.join(DIR, MODE === 'human'
-  ? '验收_25星5局体检_真人路径_v1.9.9.json'
-  : '验收_25星5局体检_v1.9.9.json');
-fs.writeFileSync(out, JSON.stringify({ version: 'v1.9.9', build: '20261120b', mode: MODE, gamesPerStar: GAMES, rows, detail: all }, null, 2), 'utf8');
+  ? '验收_25星5局体检_真人路径_v1.9.9c.json'
+  : '验收_25星5局体检_v1.9.9c.json');
+fs.writeFileSync(out, JSON.stringify({ version: 'v1.9.9c', build: '20261120c', mode: MODE, gamesPerStar: GAMES, rows, detail: all }, null, 2), 'utf8');
 console.log('\nJSON: ' + out);
 if (totalViolations > 0) process.exitCode = 1;

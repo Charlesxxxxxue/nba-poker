@@ -3,8 +3,8 @@
 <head data-page-node-id="D6OXVWtNQzfFHEl8yeZeEv">
 <meta charset="UTF-8" data-page-node-id="GqUavfoCHzaA4SQOFX9HJY">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" data-page-node-id="HLbLnKHQUaZq0cvHfzMR8X">
-<title>NBA Poker · 可玩原型 v1.9.9 · 卡面 V1.0（S4 泼墨 · 25 星 · 无水印）</title>
-<!-- build:20261120b · 哈登连击/库里重组修复 + 幻影牌不污染记牌器 + 伯德状态栏补标记；25 星 5 局体检 0 违规 -->
+<title>NBA Poker · 可玩原型 v1.9.9c · 卡面 V1.0（S4 泼墨 · 25 星 · 无水印）</title>
+<!-- build:20261120c · 真人路径技能接线（韦德/布伦森/贾巴尔走法匹配 + 哈登连击/米切尔/魔术师钩子共用）；25 星双路径体检 0 违规 -->
 <!-- 内联图标：避免浏览器默认请求 /favicon.ico 与 /apple-touch-icon.png 产生 404 控制台噪音 -->
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23070c18'/%3E%3Ccircle cx='32' cy='32' r='19' fill='%23d98b3a'/%3E%3Cg fill='none' stroke='%23070c18' stroke-width='2.6'%3E%3Cpath d='M32 13v38M13 32h38'/%3E%3Cpath d='M18.5 18.5c8 6 8 21 0 27M45.5 18.5c-8 6-8 21 0 27'/%3E%3C/g%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23070c18'/%3E%3Ccircle cx='32' cy='32' r='19' fill='%23d98b3a'/%3E%3Cg fill='none' stroke='%23070c18' stroke-width='2.6'%3E%3Cpath d='M32 13v38M13 32h38'/%3E%3Cpath d='M18.5 18.5c8 6 8 21 0 27M45.5 18.5c-8 6-8 21 0 27'/%3E%3C/g%3E%3C/svg%3E">
@@ -1311,7 +1311,8 @@ function freshSS(){ return { used:{}, foul:{}, drawn:{}, types:new Set(), pairs:
   // v1.1 扩库新10人状态
   giannisUsed:false, gFoul:0, edwardsUsed:false, edwardsBoost:0, mitchellUsed:false, cunninghamCount:0,
   leonardUsed:false, kareemUsed:false, magicUsed:false, birdUsed:false,   kgUsed:0,
-  wadeCount:0, frozen:false, kareemImmune:false, recentTypes:[] }; }
+  wadeCount:0, frozen:false, kareemImmune:false, recentTypes:[],
+  brunsonUsed:false, kobeUsed:false }; }   // v1.9.9c：补 brunson / kobe 状态可观测性
 /* oppAll → rules.js（经 window 全局提供） */
 function isFoe(a,b){ return (a===G.landlord)?(b!==G.landlord):(b===G.landlord); }
 function maxCardOf(h){ return h.length? h.slice().sort((x,y)=>y.v-x.v)[0]:null; }
@@ -1323,7 +1324,7 @@ function genAllForSeat(seat){
   const hand=G.players[seat].hand, st=G.star[seat], out=[];
   out.push(...genAllMoves(hand));
   if(SKILLS_OFF) return out;
-  if(st==='brunson' && hand.length<=5){ const tmp=hand.map(c=>({...c,v:remapLevel(c.v)})); out.push(...genAllMoves(tmp).map(mv=>({...mv,cards:mv.cards.map(mc=>hand.find(h=>h.id===mc.id))}))); }
+  if(st==='brunson' && hand.length<=5){ const tmp=hand.map(c=>({...c,v:remapLevel(c.v)})); out.push(...genAllMoves(tmp).map(mv=>({...mv,_brunson:true,cards:mv.cards.map(mc=>hand.find(h=>h.id===mc.id))}))); }
   if(st==='jordan' && G.ss[seat].wildIds.length){ const wid=G.ss[seat].wildIds;
     for(let r1=3;r1<=15;r1++) for(let r2=r1;r2<=15;r2++){ const tmp=hand.map(c=> c.id===wid[0]?{...c,v:r1}: (wid[1]!==undefined && c.id===wid[1]?{...c,v:r2}:c)); out.push(...genAllMoves(tmp).map(mv=>({...mv,cards:mv.cards.map(mc=>hand.find(h=>h.id===mc.id))}))); } }
   // v1.4 韦德·闪电突破：所有点数≤10的牌各+1（封顶J），额外生成一组可选走法
@@ -1339,7 +1340,7 @@ function genBeatingForSeat(seat,prev){
   out.push(...genBeating(hand,prev));
   // v1.5 贾巴尔·天勾无解已改回被动：压牌时单张可当对子使用
   if(SKILLS_OFF) return out;
-  if(st==='brunson' && hand.length<=5){ const tmp=hand.map(c=>({...c,v:remapLevel(c.v)})); out.push(...genBeating(tmp,prev).map(mv=>({...mv,cards:mv.cards.map(mc=>hand.find(h=>h.id===mc.id))}))); }
+  if(st==='brunson' && hand.length<=5){ const tmp=hand.map(c=>({...c,v:remapLevel(c.v)})); out.push(...genBeating(tmp,prev).map(mv=>({...mv,_brunson:true,cards:mv.cards.map(mc=>hand.find(h=>h.id===mc.id))}))); }
   if(st==='jordan' && G.ss[seat].wildIds.length){ const wid=G.ss[seat].wildIds;
     for(let r1=3;r1<=15;r1++) for(let r2=r1;r2<=15;r2++){ const tmp=hand.map(c=> c.id===wid[0]?{...c,v:r1}: (wid[1]!==undefined && c.id===wid[1]?{...c,v:r2}:c)); out.push(...genBeating(tmp,prev).map(mv=>({...mv,cards:mv.cards.map(mc=>hand.find(h=>h.id===mc.id))}))); } }
   // v1.4 韦德·闪电突破：跟牌同样生成一组≤10牌各+1的可选走法
@@ -1421,6 +1422,66 @@ function hardenPick(seat,mv){
   if(!all.length) return null;
   return strongPick(seat, all.sort((a,b)=>a.rank-b.rank), null);
 }
+/* ==========================================================================
+ * v1.9.9c · 真人 / AI 双路径技能接线
+ * 历史缺陷：nextTurn() 按座位分叉，seat0 走 enableHumanTurn→onPlay，seat1/2 走
+ * autoPlaySeat。Wade/Brunson/Kareem 的技能走法只存在于带技能的生成器里，
+ * Harden/Mitchell/Magic 的钩子只内联在 autoPlaySeat 里；真人用 parseMove()
+ * 复解析原始手牌，于是这 6 个技能对玩家静默失效（不报错、不出错牌）。
+ * 修法：把「走法匹配」「回合前钩子」「连击」三件事抽成共用函数，两条路径都调。
+ * ==========================================================================*/
+/* 走法层：按「选中牌 id 集合」把生成器里的技能走法接回真人出牌。
+ * 策略：同一组牌只要存在合法的技能走法就优先用它（技能是产品核心机制，必须对玩家
+ * 可见、可触发）；技能走法不存在或压不过上家时才回退标准解析结果。
+ * 技能走法只提升 rank / 放宽牌型，不额外消耗手牌，对玩家无负面；状态栏与日志同步。 */
+function matchPlayMove(seat, cards, baseMv, prev){
+  if(SKILLS_OFF || !cards || !cards.length || cards.some(c=>!c)) return baseMv;
+  let pool;
+  try{ pool = prev ? genBeatingForSeat(seat, prev) : genAllForSeat(seat); }
+  catch(e){ return baseMv; }
+  const want=new Set(cards.map(c=>c.id));
+  const hit=pool.find(m => (m._wade||m._brunson||m._kareem||m._bird||m._phantom)
+      && m.cards && m.cards.length===want.size
+      && m.cards.every(c=>want.has(c.id))
+      && (!prev || beats(prev,m)));
+  return hit || baseMv;
+}
+/* 钩子层：领出 / 跟牌前自动生效的技能（原内联在 autoPlaySeat 两个分支）。
+ * 真人回合在 enableHumanTurn 开头调用，AI 回合在 autoPlaySeat 中原位置调用。 */
+function preTurnSkills(seat, prev){
+  if(SKILLS_OFF) return;
+  const st=G.star[seat], S=G.ss[seat];
+  if(!st || !S) return;
+  if(st==='mitchell' && !S.mitchellUsed){
+    const foes=oppAll(seat).filter(s=>G.players[s].hand.length>0 && G.players[s].hand.length<=10);
+    if(foes.length){ const f=foes[0]; S.mitchellUsed=true;
+      if(!duncanBlocks(f, seat, '关键先生冻结')){ G.ss[f].frozen=true; log(`🧊 ${G.players[seat].name}·关键先生：冻结 ${G.players[f].name} 下一回合`); } }
+  }
+  if(st==='magic' && !S.magicUsed && G.players[seat].hand.length<=10){
+    const hand=G.players[seat].hand;
+    const foes=oppAll(seat).filter(s=>G.players[s].hand.length>0);
+    if(foes.length){ const f=foes.sort((a,b)=>G.players[a].hand.length-G.players[b].hand.length)[0];
+      const give=worstCardOf(hand);
+      if(give){ S.magicUsed=true;
+        if(!duncanBlocks(f, seat, 'showtime 塞牌')){
+          G.players[seat].hand=hand.filter(c=>c.id!==give.id);
+          G.players[f].hand=G.players[f].hand.concat([give]);
+          log(`🎩 ${G.players[seat].name}·showtime：把 ${LABEL[give.v]} 传给 ${G.players[f].name}`); } } }
+  }
+}
+/* 连击层：哈登 and one（原内联在 autoPlaySeat 领出分支）。
+ * 第二手必须只用第一手打完后剩下的牌（v1.9.9 已修），此处保持该约束。 */
+function tryHardenCombo(seat, mv){
+  if(SKILLS_OFF || !mv || G.star[seat]!=='harden' || G.ss[seat].hardenUsed) return false;
+  const m2=hardenPick(seat,mv);
+  if(!m2) return false;
+  G._noAdvance=true; commitMove(seat,mv); G.ss[seat].hardenUsed=true;
+  const rest=G.players[seat].hand;
+  const stillOk=m2.cards.every(c=>c.phantom||rest.some(h=>h.id===c.id));
+  if(G.phase==="play" && rest.length>0 && stillOk) commitMove(seat,m2);
+  else G._noAdvance=false;   // 第一手已终结对局：清连击标记，避免回合卡死
+  return true;
+}
 /* 统一驱动：人类(强策略)/AI 座(原 aiChoose 保留平衡削弱) 均走此函数，技能机制完全通用 */
 function autoPlaySeat(seat, prev){
   const st=G.star[seat], S=G.ss[seat];
@@ -1428,36 +1489,22 @@ function autoPlaySeat(seat, prev){
   const hand=G.players[seat].hand;
   if(S.frozen){ S.frozen=false; log(`🧊 ${G.players[seat].name} 被冻结，跳过本回合`); applyMove(seat,null); return; }
   if(!prev){ // ---------- 领出 ----------
-    if(st==='kobe'){ const all=genAllForSeat(seat); const fin=all.find(m=>m.cards.length===hand.length); if(fin){ commitMove(seat,fin); return; } }
+    if(st==='kobe'){ const all=genAllForSeat(seat); const fin=all.find(m=>m.cards.length===hand.length); if(fin){ G.ss[seat].kobeUsed=true; commitMove(seat,fin); return; } }
     if(st==='durant' && S.retakeReady && !S.durantUsed){ const cand=hand.filter(c=>c.v>=11 && c.v<=15); if(cand.length){ cand.sort((a,b)=>a.v-b.v); const dc=cand[0]; G.players[seat].hand=hand.filter(c=>c.id!==dc.id); S.durantUsed=true; S.retakeReady=false; G.lastMove=null; G.passes=0; log(`💀 ${G.players[seat].name}·死神降临：弃 ${LABEL[dc.v]}（>10）重夺出牌权`); } }
     if(st==='jokic' && !S.jokicUsed && hand.length>1){ jokicSwap(seat); }
     if(st==='alexander'){ const t=Object.keys(S.foul).find(k=>(S.foul[k]||0)>=4 && !S.drawn[k]); if(t!==undefined) alexanderDraw(seat, +t); }
-    // v1.1 扩库·主动效果（领出）：米切尔冻结 / 魔术师传牌
-    if(st==='mitchell' && !S.mitchellUsed){ const foes=oppAll(seat).filter(s=>G.players[s].hand.length>0 && G.players[s].hand.length<=10); if(foes.length){ const f=foes[0]; S.mitchellUsed=true; if(!duncanBlocks(f, seat, '关键先生冻结')){ G.ss[f].frozen=true; log(`🧊 ${G.players[seat].name}·关键先生：冻结 ${G.players[f].name} 下一回合`); } } }
-    if(st==='magic' && !S.magicUsed && hand.length<=10){ const foes=oppAll(seat).filter(s=>G.players[s].hand.length>0); if(foes.length){ const f=foes.sort((a,b)=>G.players[a].hand.length-G.players[b].hand.length)[0]; const give=worstCardOf(hand); if(give){ S.magicUsed=true; if(!duncanBlocks(f, seat, 'showtime 塞牌')){ G.players[seat].hand=hand.filter(c=>c.id!==give.id); G.players[f].hand=G.players[f].hand.concat([give]); log(`🎩 ${G.players[seat].name}·showtime：把 ${LABEL[give.v]} 传给 ${G.players[f].name}`); } } } }
+    preTurnSkills(seat, null);   // v1.9.9c：领出前自动技能，真人与 AI 共用
     const all=genAllForSeat(seat);
     const mv=(seat===0)? strongPick(seat, all, null) : aiChoose(seat, null);
     // v1.2 爱德华兹旧版「合成对」已废弃：当前机制不生成额外牌型，收益在 commitMove 出牌后清牌
     if(st==='curry' && S.curryUsed<2){ const t=curryReorgMove(seat); if(t){ S.curryUsed++; commitMove(seat,t); return; } }
-    if(st==='harden' && !S.hardenUsed && mv){
-      const m2=hardenPick(seat,mv);
-      if(m2){
-        G._noAdvance=true; commitMove(seat,mv); S.hardenUsed=true;
-        const rest=G.players[seat].hand;
-        const stillOk=m2.cards.every(c=>c.phantom||rest.some(h=>h.id===c.id));
-        if(G.phase==="play" && rest.length>0 && stillOk) commitMove(seat,m2);
-        else G._noAdvance=false;   // 第一手已终结对局：清连击标记，避免回合卡死
-        return;
-      }
-    }
+    if(tryHardenCombo(seat,mv)) return;   // v1.9.9c：连击抽出共用函数，真人与 AI 同路径
     // v1.6 扬尼斯·字母轰炸：旧「收牌后弃牌」已废弃；当前为被对手压牌时造犯规，满4点弃一张最小牌并清零（见 commitMove 被压分支）
     if(mv){ commitMove(seat,mv); return; }
     applyMove(seat,null); return;
   } else { // ---------- 跟牌 ----------
     if(st==='lebron' && !S.lebronUsed && prev.type==='single' && G.passes>=1){ G.players[seat].hand=G.players[seat].hand.concat([prev.cards[0]]); G.lastMove=null; G.passes=0; S.lebronUsed=true; log(`👑 ${G.players[seat].name}·加冕：截下 ${LABEL[prev.cards[0].v]} 并领出`); const a2=genAllForSeat(seat); const m2=(seat===0)?strongPick(seat,a2,null):aiChoose(seat,null); if(m2) commitMove(seat,m2); else applyMove(seat,null); return; }
-    // v1.1 扩库·主动效果（跟牌）：米切尔冻结 / 魔术师传牌
-    if(st==='mitchell' && !S.mitchellUsed){ const foes=oppAll(seat).filter(s=>G.players[s].hand.length>0 && G.players[s].hand.length<=10); if(foes.length){ const f=foes[0]; S.mitchellUsed=true; if(!duncanBlocks(f, seat, '关键先生冻结')){ G.ss[f].frozen=true; log(`🧊 ${G.players[seat].name}·关键先生：冻结 ${G.players[f].name} 下一回合`); } } }
-    if(st==='magic' && !S.magicUsed && hand.length<=10){ const foes=oppAll(seat).filter(s=>G.players[s].hand.length>0); if(foes.length){ const f=foes.sort((a,b)=>G.players[a].hand.length-G.players[b].hand.length)[0]; const give=worstCardOf(hand); if(give){ S.magicUsed=true; if(!duncanBlocks(f, seat, 'showtime 塞牌')){ G.players[seat].hand=hand.filter(c=>c.id!==give.id); G.players[f].hand=G.players[f].hand.concat([give]); log(`🎩 ${G.players[seat].name}·showtime：把 ${LABEL[give.v]} 传给 ${G.players[f].name}`); } } } }
+    preTurnSkills(seat, prev);   // v1.9.9c：跟牌前自动技能，真人与 AI 共用
     // v1.3 爱德华兹·三分暴雨：跟牌不再生成合成对；每局 3 次免费清牌统一在 commitMove 结算
     const mv=(seat===0)? strongPick(seat, genBeatingForSeat(seat,prev), prev) : aiChoose(seat, prev);
     if(mv){ commitMove(seat,mv); return; }
@@ -1537,6 +1584,7 @@ function commitMove(seat,mv){
     G.lastMove=mv; G.lastSeat=seat; G.passes=0;
     if(mv._bird) G.ss[seat].birdUsed=true;
     if(mv._wade) G.ss[seat].wadeCount=(G.ss[seat].wadeCount||0)+1;
+    if(mv._brunson && G.star[seat]==="brunson"){ G.ss[seat].brunsonUsed=true; log(`🏀 ${G.players[seat].name}·大心脏：非王牌升一级打出 ${moveName(mv)}`); }
     // v1.3 爱德华兹·三分暴雨（v1.9.5 文案对齐）：每次出牌后额外清掉最小牌（每局最多 3 次），不消耗出牌机会
     if(G.star[seat]==="edwards" && G.ss[seat].edwardsBoost<3 && G.players[seat].hand.length>0){
       const eh=G.players[seat].hand; const ew=worstCardOf(eh);
@@ -1613,6 +1661,11 @@ function moveName(mv){
 /* ---- 玩家回合 ---- */
 let selected=new Set();
 function enableHumanTurn(){
+  // v1.9.9c：真人回合补齐「被冻结跳过」与「领出/跟牌前自动技能」，与 AI 路径对齐
+  if(G.phase==='play' && !SKILLS_OFF){
+    if(G.ss[0].frozen){ G.ss[0].frozen=false; log('🧊 你被冻结，跳过本回合',true); applyMove(0,null); return; }
+    preTurnSkills(0, G.lastMove);
+  }
   selected.clear();
   updateTurnUI();
   // 杜兰特·死神降临：重夺选择模式（仅限真实 UI 人类，headless 由 autoPlaySeat 自动弃最小>10牌）
@@ -1726,11 +1779,20 @@ function onPlay(){
   } else {
     mv=parseMove(cards);
   }
+  /* v1.9.9c：把生成器里的技能走法接回真人路径。Wade / Brunson / Kareem 的
+   * rank 或 type 与原始牌不一致，parseMove 无法解析；按选中牌 id 集合匹配。 */
+  if(!selWilds.length && !SKILLS_OFF) mv=matchPlayMove(0, cards, mv, G.lastMove);
   if(!mv){alert("牌型不合法");return;}
-  if(!beats(G.lastMove,mv)){alert("管不上上家");return;}
   // v1.9.9b：伯德三带两单由真人手动选出时补技能标记，保证状态栏与 AI 路径一致
   if(!SKILLS_OFF && G.star[0]==='bird' && mv.type==='triple1s') mv._bird=true;
-  clearTimers(); selected.clear(); G.wildChoice={}; applyMove(0,mv);
+  // v1.9.9c：科比一手清台不比较点数（与 AI / 体检台口径一致）
+  const kobeFinish = !SKILLS_OFF && G.star[0]==='kobe'
+      && cards.length===G.players[0].hand.length && mv.cards.length===cards.length;
+  if(kobeFinish) G.ss[0].kobeUsed=true;
+  if(!kobeFinish && !beats(G.lastMove,mv)){alert("管不上上家");return;}
+  clearTimers(); selected.clear(); G.wildChoice={};
+  if(!G.lastMove && tryHardenCombo(0,mv)) return;   // v1.9.9c：领出时哈登连击，与 AI 一致
+  applyMove(0,mv);
 }
 function buildReorgMove(ids, seat){
   if(ids.length<2) return null;
@@ -1998,8 +2060,8 @@ function renderSkillStatus(){
   else if(k==="kidd") used=G.kiddPending?"待分配底牌":(G.kiddAssigned?"底牌已分配":"已看底牌 · 常驻");
   else if(k==="oNeal") used=S.oNealUsed?"已用 · 一局一次":"待发动 · 首张炸弹升级";
   else if(k==="nowitzki") used=`累计对子 ${S.pairs} · 已弃 ${S.discarded}`;
-  else if(k==="brunson") used=G.players[0].hand.length<=5?"残局强化已激活 · 非王牌 +1 级":"常驻 · ≤5 张时非王牌 +1 级";
-  else if(k==="kobe") used="可一手出完即胜";
+  else if(k==="brunson") used=(S.brunsonUsed?"已发动 · ":"")+(G.players[0].hand.length<=5?"残局强化已激活 · 非王牌 +1 级":"常驻 · ≤5 张时非王牌 +1 级");
+  else if(k==="kobe") used=S.kobeUsed?"已发动 · 一手清台":"可一手出完即胜";
   el.textContent=`技能：${st.skill}（${used}）`;
 }
 function renderHands(){
@@ -2224,7 +2286,7 @@ function exportTelemetry(){
 function clearTelemetry(){ try{ localStorage.removeItem(TELE_KEY); }catch(e){} showTelemetry(); }
 
 /* ============ v1.9.8 试玩反馈卡：纯前端生成 + 一键复制，零后端 / 零上传 / 零身份信息 ============ */
-const FB_VER="v1.9.9", FB_BUILD="20261120b";
+const FB_VER="v1.9.9c", FB_BUILD="20261120c";
 function fbDevice(){
   const ua=navigator.userAgent||"";
   let os="其他设备";
